@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 from isca import IscaCodeBase, GreyCodeBase, DiagTable, Experiment, Namelist, GFDL_BASE
@@ -5,6 +7,7 @@ from isca.util import exp_progress
 #from ntfy import notify
 
 NCORES = 16
+base_dir = os.path.dirname(os.path.realpath(__file__))
 
 # a CodeBase can be a directory on the computer,
 # useful for iterative development
