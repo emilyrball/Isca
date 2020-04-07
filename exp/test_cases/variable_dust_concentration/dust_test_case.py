@@ -229,7 +229,7 @@ if __name__=="__main__":
             for per_value in pers:
                 exp = Experiment('dust_clim_grey_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val), codebase=cb)
                 exp.clear_rundir()
-		exp.inputfiles = [os.path.join(base_dir,'input/dust_clim.nc')]
+                exp.inputfiles = [os.path.join(base_dir,'input/dust_clim.nc')]
                 exp.diag_table = diag
                 exp.namelist = namelist.copy()
                 exp.namelist['constants_nml']['grav']     = scale * 3.71

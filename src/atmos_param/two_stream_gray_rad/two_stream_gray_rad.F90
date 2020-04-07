@@ -89,7 +89,7 @@ real    :: dt_rad_avg     = -1
 character(len=32) :: rad_scheme = 'frierson'
 
 integer, parameter :: B_GEEN = 1,  B_FRIERSON = 2, &
-                      B_BYRNE = 3, B_SCHNEIDER_LIU=4 &
+                      B_BYRNE = 3, B_SCHNEIDER_LIU=4, &
                       B_DUST = 5
 integer, private :: sw_scheme = B_DUST
 integer, private :: lw_scheme = B_DUST
@@ -225,6 +225,7 @@ endif
 
 if(do_read_dust)then
    call interpolator_init (dust_interp, trim(dust_file)//'.nc', lonb, latb,data_out_of_bounds=(/ZERO/))
+endif
 
 if(uppercase(trim(rad_scheme)) == 'GEEN') then
   lw_scheme = B_GEEN
@@ -555,7 +556,7 @@ case(B_DUST)
 
   do k = 1, n+1
     sw_tau(:,:,k) = sw_tau_0 * (p_half(:,:,k)/pstd_mks)**solar_exponent &
-                    + W * (p_half(:,:,k)/pstd_mks) * tau_dust(:,:)
+                    + W * (p_half(:,:,k)/pstd_mks) * tau_dust(:,:,k)
   end do
 
   do k = 1, n+1
