@@ -119,7 +119,9 @@ real :: bog_a = 0.8678
 real :: bog_b = 1997.9
 real :: bog_mu = 1.0
 
-! constants for DUST radiation version
+! parameters for dust radiation scheme
+real    :: W               = 1.0 ! what is this?
+
 
 
 real, allocatable, dimension(:,:)   :: insolation, p2, lw_tau_0, sw_tau_0 !s albedo now defined in mixed_layer_init
@@ -166,7 +168,7 @@ namelist/two_stream_gray_rad_nml/ solar_constant, del_sol, &
 integer :: id_olr, id_swdn_sfc, id_swdn_toa, id_net_lw_surf, id_lwdn_sfc, id_lwup_sfc, &
            id_tdt_rad, id_tdt_solar, id_flux_rad, id_flux_lw, id_flux_sw, id_coszen, id_fracsun, &
            id_lw_dtrans, id_lw_dtrans_win, id_sw_dtrans, id_co2, id_mars_solar_long, id_rrsun, id_true_anom, &
-           id_time_since_ae, id_dec, id_ang
+           id_time_since_ae, id_dec, id_ang, id_dust
 
 character(len=10), parameter :: mod_name = 'two_stream'
 
@@ -379,7 +381,7 @@ end select
                  'ppmv', missing_value=missing_value      )
     id_dust = &
                register_diag_field ( mod_name, 'dust', Time, &
-                 'dust optical depth', &
+                 'column dust optical depth', &
                  'none', missing_value=missing_value      )
 
   if (lw_scheme.eq.B_GEEN) then
@@ -442,7 +444,7 @@ logical :: used
 
 
 real ,dimension(size(q,1),size(q,2),size(q,3)) :: co2f
-real ,dimension(size(q,1),size(q,2),size(q,3)) :: dustf
+real ,dimension(size(q,1),size(q,2),size(q,3)) :: tau_dust
 
 n = size(t,3)
 
@@ -450,8 +452,7 @@ n = size(t,3)
 ! SHORTWAVE RADIATION
 
 if(do_read_dust)then
-  call interpolator( dust_interp, Time_diag, p_half, dustf,trim(dust_variable_name))
-  CDOD = dustf
+  call interpolator( dust_interp, Time_diag, p_half, tau_dust,trim(dust_variable_name))
 endif
 
 ! insolation at TOA
@@ -548,11 +549,13 @@ case(B_FRIERSON, B_BYRNE)
   end do
 
 case(B_DUST)
+  ! Frierson handling of SW radiation with inclusion of column dust optical
+  ! depth
   sw_tau_0   = (1.0 - sw_diff*sin(lat)**2)*atm_abs
 
   do k = 1, n+1
     sw_tau(:,:,k) = sw_tau_0 * (p_half(:,:,k)/pstd_mks)**solar_exponent &
-                    + W * (p_half(:,:,k)/pstd_mks) * CDOD(:,:,k)
+                    + W * (p_half(:,:,k)/pstd_mks) * tau_dust(:,:)
   end do
 
   do k = 1, n+1
