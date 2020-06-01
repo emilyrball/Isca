@@ -343,13 +343,11 @@ real, allocatable :: time_in(:)
 real, allocatable, save :: agrid_mod(:,:,:)
 integer :: nx, ny
 integer :: io, ierr
-
 if (.not. module_is_initialized) then
   call fms_init
   call diag_manager_init
   call horiz_interp_init
 endif
-
 clim_type%separate_time_vary_calc = .false.
 
 tpi = 2.0*PI ! 4.*acos(0.)
@@ -375,7 +373,6 @@ call mpp_get_info(unit, ndim, nvar, natt, ntime)
 clim_type%unit      = unit
 clim_type%file_name = trim(file_name)
 
-
 num_fields = nvar
 if(present(data_names)) num_fields= size(data_names(:))
 
@@ -384,16 +381,13 @@ if(present(data_names)) num_fields= size(data_names(:))
 ! -------------------------------------------------------------------
 allocate(axes(ndim))
 call mpp_get_axes(unit, axes, time_axis)
-
 nlon=0 ! Number of longitudes (center-points) in the climatology.
 nlat=0 ! Number of latitudes (center-points) in the climatology.
 nlev=0 ! Number of levels (center-points) in the climatology.
 nlatb=0 ! Number of longitudes (boundaries) in the climatology.
 nlonb=0 ! Number of latitudes (boundaries) in the climatology.
 nlevh=0 ! Number of levels (boundaries) in the climatology.
-
 clim_type%level_type = 0 ! Default value
-
 !++lwh
 ! -------------------------------------------------------------------
 ! For 2-D fields, set a default value of nlev=nlevh=1
@@ -402,7 +396,6 @@ nlev = 1
 nlevh = 1
 !--lwh
         clim_type%vertical_indices = 0  ! initial value
-
 do i = 1, ndim
   call mpp_get_atts(axes(i), name=name,len=len,units=units,  &
                     calendar=file_calendar, sense=sense)
@@ -476,7 +469,6 @@ do i = 1, ndim
       else 
         clim_type%vertical_indices = INCREASING_DOWNWARD
       endif
-      
     case('phalf')
       nlevh=len
       allocate(clim_type%halflevs(nlevh))
@@ -512,7 +504,6 @@ do i = 1, ndim
       allocate(clim_type%halflevs(nlevh))
       call mpp_get_axis_data(axes(i),clim_type%halflevs)
       clim_type%level_type = SIGMA
-    
     case('time')
       model_calendar = get_calendar_type() 
       fileday = 0
@@ -722,6 +713,7 @@ do i = 1, ndim
         clim_type%clim_times(1,1) = set_time(0,0) + base_time
       endif
       deallocate(time_in)
+      print*, 'time okay'
   end select ! case(name)
 enddo
 
@@ -1063,7 +1055,7 @@ endif
 module_is_initialized = .true.
 
 call write_version_number (version, tagname)
-
+print*, 'interpolator init okay'
 end subroutine interpolator_init
 
  subroutine cell_center2(q1, q2, q3, q4, e2)
@@ -1090,7 +1082,6 @@ end subroutine interpolator_init
       enddo
 
       call cart_to_latlon(1, ec, e2(1), e2(2))
-
  end subroutine cell_center2
 
  subroutine cart_to_latlon(np, q, xs, ys)
@@ -1129,7 +1120,6 @@ end subroutine interpolator_init
         q(k,i) = p(k)
      enddo
   enddo
-
  end  subroutine cart_to_latlon
 
  subroutine latlon2xyz(p, e)
@@ -1156,7 +1146,6 @@ end subroutine interpolator_init
     e(1) = e1
     e(2) = e2
     e(3) = e3
-
  end subroutine latlon2xyz
 
 !
@@ -1247,7 +1236,7 @@ enddo
 num_clim_diag = num_clim_diag+size(clim_type%field_name(:))
 
 clim_diag_initialized = .true.
-
+print*, 'inti_clim_diag okay'
 end subroutine init_clim_diag
 
 
@@ -1255,7 +1244,6 @@ end subroutine init_clim_diag
 !----------------------------------------------------------------------------
 
 subroutine obtain_interpolator_time_slices (clim_type, Time)
-
 !  Makes sure that appropriate time slices are available for interpolation 
 !  on this time step
 !
@@ -1470,20 +1458,19 @@ integer :: i, n
 
 !-------------------------------------------------------------------
 
-
+print*,'obtain_interpolator_time_slices'
 end subroutine obtain_interpolator_time_slices 
 
 
 !#####################################################################
 
 subroutine unset_interpolator_time_flag (clim_type)
-
 type(interpolate_type), intent(inout) :: clim_type
 
 
       clim_type%separate_time_vary_calc = .false.
 
-
+print*,'unset_interpolator_time flag okay'
 end subroutine unset_interpolator_time_flag 
 
 

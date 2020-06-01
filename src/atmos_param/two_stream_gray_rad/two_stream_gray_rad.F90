@@ -380,10 +380,10 @@ end select
                register_diag_field ( mod_name, 'co2', Time, &
                  'co2 concentration', &
                  'ppmv', missing_value=missing_value      )
-    id_dust = &
-               register_diag_field ( mod_name, 'dust', Time, &
-                 'column dust optical depth', &
-                 'none', missing_value=missing_value      )
+!    id_dust = &
+!               register_diag_field ( mod_name, 'dust', Time, &
+!                 'column dust optical depth', &
+!                 'none', missing_value=missing_value      )
 
   if (lw_scheme.eq.B_GEEN) then
     id_lw_dtrans_win  = &
