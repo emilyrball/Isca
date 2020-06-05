@@ -230,7 +230,7 @@ integer, public :: clock_flag_default
   character(len=8)  :: warning_level = 'warning'
   character(len=64) :: iospec_ieee32 = '-N ieee_32'
   integer           :: stack_size = 0
-  integer           :: domains_stack_size = 0
+  integer           :: domains_stack_size = 51200
   logical, public   :: print_memory_usage = .FALSE.
 
 !------ namelist interface -------

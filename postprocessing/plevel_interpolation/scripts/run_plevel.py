@@ -8,10 +8,10 @@ import subprocess
 
 start_time=time.time()
 base_dir='$GFDL_DATA'
-exp_name_list = ['soc_mars_mk36_per_value70.85_none_mld_2.0']
+exp_name_list = ['grey_mars_mk36_per_value70.85_none_mld_2.0']
 avg_or_daily_list=['daily']
 start_file=1
-end_file=2
+end_file=240
 nfiles=(end_file-start_file)+1
 
 do_extra_averaging=False #If true, then 6hourly data is averaged into daily data using cdo
@@ -30,19 +30,19 @@ var_names={}
 
 if level_set=='standard':
 
-    plevs['monthly']=' -p "300 400 500"'
+    #plevs['monthly']=' -p "300 400 500"'
 
-    plevs['timestep']=' -p "3 16 51 138 324 676 1000 1266 2162 3407 5014 6957 9185 10000 11627 14210 16864 19534 20000 22181 24783 27331 29830 32290 34731 37173 39637 42147 44725 47391 50164 53061 56100 59295 62661 66211 70000 73915 78095 82510 85000 87175 92104 97312"'
+    #plevs['timestep']=' -p "3 16 51 138 324 676 1000 1266 2162 3407 5014 6957 9185 10000 11627 14210 16864 19534 20000 22181 24783 27331 29830 32290 34731 37173 39637 42147 44725 47391 50164 53061 56100 59295 62661 66211 70000 73915 78095 82510 85000 87175 92104 97312"'
 
-    plevs['pentad']=' -p "3 16 51 138 324 676 1000 1266 2162 3407 5014 6957 9185 10000 11627 14210 16864 19534 20000 22181 24783 27331 29830 32290 34731 37173 39637 42147 44725 47391 50164 53061 56100 59295 62661 66211 70000 73915 78095 82510 85000 87175 92104 97312"'
+    #plevs['pentad']=' -p "3 16 51 138 324 676 1000 1266 2162 3407 5014 6957 9185 10000 11627 14210 16864 19534 20000 22181 24783 27331 29830 32290 34731 37173 39637 42147 44725 47391 50164 53061 56100 59295 62661 66211 70000 73915 78095 82510 85000 87175 92104 97312"'
 
-    plevs['6hourly']=' -p "1000 10000 25000 50000 85000 92500"'
-    plevs['daily']  =' -p "100 200 250 500 550 625"'
+    #plevs['6hourly']=' -p "1000 10000 25000 50000 85000 92500"'
+    plevs['daily']  =' -p "1 2 3 4 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125 130 135 140 145 150 160 170 180 190 200 210 220 230 240 250 275 300 325 350 375 400 425 450 475 500 525 550 575 600 625"'
     
-    var_names['monthly']='-a'
-    var_names['pentad']='-a slp height'    
-    var_names['timestep']='-a'
-    var_names['6hourly']='ucomp slp height vor t_surf vcomp omega'
+    #var_names['monthly']='-a'
+    #var_names['pentad']='-a slp height'    
+    #var_names['timestep']='-a'
+    #var_names['6hourly']='ucomp slp height vor t_surf vcomp omega'
     var_names['daily']='-a'
     file_suffix='_interp_new_height_temp'
 
