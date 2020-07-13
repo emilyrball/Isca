@@ -45,12 +45,12 @@ use def_cld,      only: StrCld,   deallocate_cld, deallocate_cld_prsc
 use def_aer,      only: StrAer,   deallocate_aer, deallocate_aer_prsc
 use def_out,      only: StrOut,   deallocate_out
 
-use set_control_mod, only: set_control
-use set_dimen_mod,   only: set_dimen
-use set_atm_mod,     only: set_atm
-use set_bound_mod,   only: set_bound
-use set_cld_mod,     only: set_cld
-use set_aer_mod,     only: set_aer
+use set_control_mod,  only: set_control
+use set_dimen_mod,    only: set_dimen
+use set_atm_mod,      only: set_atm
+use set_bound_mod,    only: set_bound
+use set_cld_mod,      only: set_cld
+use socrates_set_aer, only: set_aer
 
 use soc_constants_mod,   only: i_def, r_def
 
