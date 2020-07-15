@@ -29,13 +29,15 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
   character(len=256) :: sw_hires_spectral_filename='unset'
   logical :: account_for_effect_of_water=.TRUE. !if False then radiation is fed water mixing ratios = 0. If true it's fed mixing ratios based on model specific humidity.
   logical :: account_for_effect_of_ozone=.TRUE. !if False then radiation is fed ozone mixing ratios = 0. If true it's fed mixing ratios based on model ozone field.
+  logical :: account_for_effect_of_dust=.TRUE. !if False then radiation is fed dust mixing ratios = 0. If true it's fed mixing ratios based on model dust field.
   logical :: do_read_ozone = .FALSE. ! read ozone from an external file?
   character(len=256) :: ozone_file_name='ozone' !Name of file containing ozone field - n.b. don't need to include '.nc'
   character(len=256) :: ozone_field_name='ozone' !Name of ozone variable in ozone file
   logical            :: input_o3_file_is_mmr=.true. ! Does the ozone input file contain values as a mass mixing ratio (set to true) or a volume mixing ratio (set to false)?
   logical :: do_read_co2 = .FALSE. ! read ozone from an external file?
   character(len=256) :: co2_file_name='co2' !Name of file containing co2 field - n.b. don't need to include '.nc'
-  character(len=256) :: co2_field_name='co2' !Name of co2 variable in co2 file  
+  character(len=256) :: co2_field_name='co2' !Name of co2 variable in co2 file
+  logical            :: some_dust_condition=.TRUE.
   real(r_def) :: input_planet_emissivity = 1.0 !Emissivity of surface. Defined as constant all over surface.
   real :: co2_ppmv = 300. !Default CO2 concentration in PPMV
   logical ::  input_co2_mmr=.false. !Socrates wants input concentrations as mmr not vmr, so need to make sure input data supplied is converted if necessary
@@ -118,7 +120,7 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
   NAMELIST/socrates_rad_nml/ stellar_constant, tidally_locked, lw_spectral_filename, lw_hires_spectral_filename, &
                              sw_spectral_filename, sw_hires_spectral_filename, socrates_hires_mode, &
                              input_planet_emissivity, co2_ppmv, &
-                             account_for_effect_of_water, account_for_effect_of_ozone, &
+                             account_for_effect_of_water, account_for_effect_of_ozone, account_for_effect_of_dust, &
                              do_read_ozone, ozone_file_name, ozone_field_name, input_o3_file_is_mmr, &
                              do_read_co2, co2_file_name, co2_field_name, input_co2_mmr, &                             
                              solday, do_rad_time_avg, equinox_day,  &
