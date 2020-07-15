@@ -9,7 +9,7 @@ CONTAINS
 
 ! Subroutine to set the aerosol fields for the core radiation code.
 !------------------------------------------------------------------------------
-SUBROUTINE set_aer(control, dimen, spectrum, aer, n_profile)
+SUBROUTINE set_aer(control, dimen, spectrum, aer, n_profile, dust)
 
 USE rad_pcf,      ONLY: ip_aersrc_classic_ron
 USE def_spectrum, ONLY: StrSpecData
@@ -20,7 +20,7 @@ use soc_constants_mod,   only: i_def, r_def
 
 IMPLICIT NONE
 
-integer :: i, j, k
+integer :: i_aer, i, l
 
 ! Control options:
 TYPE(StrCtrl),      INTENT(IN)  :: control
@@ -36,7 +36,11 @@ TYPE(StrAer),       INTENT(OUT) :: aer
 
 INTEGER(i_def), INTENT(IN) :: n_profile
 !   Number of atmospheric profiles for radiation calculations
+INTEGER(i_def), INTENT(IN) :: n_layer
+!   Number of atmospheric layers for radiation calculations
 
+REAL(r_def), INTENT(IN) :: dust(n_profile, n_layer)
+!   Dust mass mixing ratio
 
 ! Allocate structure for the core radiation code interface
 CALL allocate_aer(aer, dimen, spectrum)
@@ -44,13 +48,25 @@ CALL allocate_aer_prsc(aer, dimen, spectrum)
 
 aer%mr_source = ip_aersrc_classic_ron
 
-DO i=1, spectrum%aerosol%n_aerosol
-  aer%mr_type_index(i)=i
-  DO j=1, dimen%nd_profile
-    DO k=1, dimen%nd_layer
-      aer%mix_ratio(:,:,i)=1.0e-06
+DO i_aer=1, spectrum%aerosol%n_aerosol
+  aer%mr_type_index(i_aer)=i_aer
+  DO i=1, n_layer
+    DO l=1, n_profile
+      aer%mix_ratio(l,i,i_aer) = dust(l,i)
     END DO
   END DO
 END DO
+
+   
+!  CASE DEFAULT
+!    DO i=1, n_layer
+!      DO l=1, n_profile
+!        atm%gas_mix_ratio(l, i, i_gas) = 0.0_r_def
+!      END DO
+!    END DO
+!  END SELECT
+!END DO
+
+
 END SUBROUTINE set_aer
 END MODULE socrates_set_aer
