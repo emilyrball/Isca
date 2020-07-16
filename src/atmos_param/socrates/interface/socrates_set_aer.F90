@@ -9,7 +9,7 @@ CONTAINS
 
 ! Subroutine to set the aerosol fields for the core radiation code.
 !------------------------------------------------------------------------------
-SUBROUTINE set_aer(control, dimen, spectrum, aer, n_profile, dust)
+SUBROUTINE set_aer(control, dimen, spectrum, aer, n_profile, n_layer, dust)
 
 USE rad_pcf,      ONLY: ip_aersrc_classic_ron
 USE def_spectrum, ONLY: StrSpecData
