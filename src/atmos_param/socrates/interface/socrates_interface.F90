@@ -772,7 +772,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     USE socrates_config_mod
     use vert_coordinate_mod,   only: compute_vert_coord
     use transforms_mod,        only: get_sin_lat
-    use spectral_dynamics_mod, only: get_pk_bk
+    use spectral_dynamics_mod, only: get_pk_bk, get_num_levels
 
     ! Input time
     type(time_type), intent(in)           :: Time, Time_diag
@@ -783,7 +783,11 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, intent(out), dimension(:,:)     :: net_surf_sw_down, surf_lw_down 
     real, intent(in) :: delta_t
     
-    real, allocatable, dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    integer :: num_levels
+    
+    call get_num_levels(num_levels)
+    
+    real, dimension(num_levels+1)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
     
