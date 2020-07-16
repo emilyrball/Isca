@@ -1078,18 +1078,18 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        
        if (some_dust_condition == .true.) then
        
-         #ifdef INTERNAL_FILE_NML
-             read (input_nml_file, nml=spectral_init_cond_nml, iostat=io)
-             ierr = check_nml_error(io, 'spectral_init_cond_nml')
-         #else
-             unit = open_namelist_file()
-             ierr=1
-             do while (ierr /= 0)
-               read(unit, nml=spectral_init_cond_nml, iostat=io, end=20)
-               ierr = check_nml_error (io, 'spectral_init_cond_nml')
-             enddo
-         20  call close_file (unit)
-         #endif
+#ifdef INTERNAL_FILE_NML
+    read (input_nml_file, nml=spectral_init_cond_nml, iostat=io)
+    ierr = check_nml_error(io, 'spectral_init_cond_nml')
+#else
+    unit = open_namelist_file()
+    ierr=1
+    do while (ierr /= 0)
+      read(unit, nml=spectral_init_cond_nml, iostat=io, end=20)
+      ierr = check_nml_error (io, 'spectral_init_cond_nml')
+    end do
+20  call close_file (unit)
+#endif
        
          sin_lat (:,:) = sin(rad_lat(:,:))
        
