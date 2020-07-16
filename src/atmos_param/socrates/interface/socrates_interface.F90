@@ -35,7 +35,7 @@ MODULE socrates_interface_mod
   USE constants_mod, only: grav, rdgas, rvgas, cp_air
   USE fms_mod, only: stdlog, FATAL, WARNING, error_mesg, check_nml_error
   USE interpolator_mod, only: interpolate_type  
-  USE soc_constants_mod  
+  USE soc_constants_mod
 
   IMPLICIT NONE
 
@@ -530,6 +530,7 @@ write(stdlog_unit, socrates_rad_nml)
     real(r_def), intent(out), optional :: output_flux_direct(:,:,:)    
     real(r_def), intent(out), optional :: output_soc_spectral_olr(:,:,:)
     real(r_def), intent(out), optional :: t_half_level_out(size(fms_temp,1),size(fms_temp,2),size(fms_temp,3)+1)
+    
 
     ! Hi-res output
     INTEGER, PARAMETER :: out_unit=20
@@ -766,9 +767,10 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        temp_tend, net_surf_sw_down, surf_lw_down, delta_t)  
 
     use astronomy_mod, only: diurnal_solar
-    use constants_mod,         only: pi, wtmco2, wtmozone, rdgas, gas_constant, wtm_dust
+    use constants_mod,         only: pi, wtmco2, wtmozone, rdgas, gas_constant
     use interpolator_mod,only: interpolator
-    USE socrates_config_mod    
+    USE socrates_config_mod
+    use vert_coordinate_mod, only: compute_vert_coord
 
     ! Input time
     type(time_type), intent(in)           :: Time, Time_diag
@@ -778,6 +780,11 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, intent(inout), dimension(:,:,:) :: temp_tend
     real, intent(out), dimension(:,:)   :: net_surf_sw_down, surf_lw_down 
     real, intent(in) :: delta_t
+
+    real,    intent(in) :: reference_sea_level_press
+    character(len=*), intent(in) :: vert_coord_option
+    real,    intent(in) :: scale_heights, surf_res, p_press, p_sigma, exponent
+    real,    intent(out), dimension(:)       :: pk, bk
 
     integer(i_def) :: n_profile, n_layer
 
@@ -1068,9 +1075,24 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
          endif
        endif
        
+       #ifdef INTERNAL_FILE_NML
+           read (input_nml_file, nml=spectral_init_cond_nml, iostat=io)
+           ierr = check_nml_error(io, 'spectral_init_cond_nml')
+       #else
+           unit = open_namelist_file()
+           ierr=1
+           do while (ierr /= 0)
+             read(unit, nml=spectral_init_cond_nml, iostat=io, end=20)
+             ierr = check_nml_error (io, 'spectral_init_cond_nml')
+           enddo
+       20  call close_file (unit)
+       #endif
+       
+       call compute_vert_coord(vert_coord_option, scale_heights, surf_res, exponent, p_press, p_sigma, reference_sea_level_press, pk,bk)
+       
        if (some_dust_condition == .true.) then
          zmax = 60 + 18*sin(mars_solar_long-158.)-(32_18*sin(mars_solar_long-158))*(sin(rad_lat))**4-8*sin(mars_solar_long-158)*(sin(rad_lat))**5
-         dust_in = q_0*exp(nu*(1-(p_0/p_surf)**(70./zmax)))
+         dust_in = q_0*exp(nu*(1-(bk)**(70./zmax)))
        endif
 	
 
