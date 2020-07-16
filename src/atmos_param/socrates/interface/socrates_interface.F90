@@ -766,11 +766,12 @@ write(stdlog_unit, socrates_rad_nml)
 subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf_in, p_full_in, p_half_in, z_full_in, z_half_in, albedo_in, &
        temp_tend, net_surf_sw_down, surf_lw_down, delta_t)  
 
-    use astronomy_mod, only: diurnal_solar
-    use constants_mod,         only: pi, wtmco2, wtmozone, rdgas, gas_constant
-    use interpolator_mod,only: interpolator
+    use astronomy_mod,       only: diurnal_solar
+    use constants_mod,       only: pi, wtmco2, wtmozone, rdgas, gas_constant, dust_mmr_ref, nu_dust
+    use interpolator_mod,    only: interpolator
     USE socrates_config_mod
     use vert_coordinate_mod, only: compute_vert_coord
+    use transforms_mod,      only: get_sin_lat
 
     ! Input time
     type(time_type), intent(in)           :: Time, Time_diag
@@ -784,11 +785,11 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real,    intent(in) :: reference_sea_level_press
     character(len=*), intent(in) :: vert_coord_option
     real,    intent(in) :: scale_heights, surf_res, p_press, p_sigma, exponent
-    real,    intent(out), dimension(:)       :: pk, bk
+    real,    intent(out), dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
 
-    real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc
+    real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, zmax
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: tg_tmp_soc, q_soc, ozone_soc, co2_soc, dust_soc, p_full_soc, output_heating_rate_sw, output_heating_rate_lw, output_heating_rate_total, z_full_soc
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: p_half_soc, t_half_out, z_half_soc,output_soc_flux_sw_down, output_soc_flux_sw_up, output_soc_flux_lw_down, output_soc_flux_lw_up
 
@@ -799,9 +800,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
-
     
-
         !check if we really want to recompute radiation
         ! alarm
           call get_time(Time,seconds,days)
@@ -1075,24 +1074,30 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
          endif
        endif
        
-       #ifdef INTERNAL_FILE_NML
-           read (input_nml_file, nml=spectral_init_cond_nml, iostat=io)
-           ierr = check_nml_error(io, 'spectral_init_cond_nml')
-       #else
-           unit = open_namelist_file()
-           ierr=1
-           do while (ierr /= 0)
-             read(unit, nml=spectral_init_cond_nml, iostat=io, end=20)
-             ierr = check_nml_error (io, 'spectral_init_cond_nml')
-           enddo
-       20  call close_file (unit)
-       #endif
-       
-       call compute_vert_coord(vert_coord_option, scale_heights, surf_res, exponent, p_press, p_sigma, reference_sea_level_press, pk,bk)
-       
        if (some_dust_condition == .true.) then
-         zmax = 60 + 18*sin(mars_solar_long-158.)-(32_18*sin(mars_solar_long-158))*(sin(rad_lat))**4-8*sin(mars_solar_long-158)*(sin(rad_lat))**5
-         dust_in = q_0*exp(nu*(1-(bk)**(70./zmax)))
+       
+         #ifdef INTERNAL_FILE_NML
+             read (input_nml_file, nml=spectral_init_cond_nml, iostat=io)
+             ierr = check_nml_error(io, 'spectral_init_cond_nml')
+         #else
+             unit = open_namelist_file()
+             ierr=1
+             do while (ierr /= 0)
+               read(unit, nml=spectral_init_cond_nml, iostat=io, end=20)
+               ierr = check_nml_error (io, 'spectral_init_cond_nml')
+             enddo
+         20  call close_file (unit)
+         #endif
+       
+         sin_lat (:,:) = sin(rad_lat(:,:))
+       
+         call compute_vert_coord(vert_coord_option, scale_heights, surf_res, exponent, p_press, p_sigma, reference_sea_level_press, pk,bk)
+	 
+         zmax (:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
+	              -(32_18*sin((mars_solar_long-158))*pi/180.)*(sin_lat(:,:))**4 &
+		      -8*sin((mars_solar_long-158)*pi/180.)*(sin_lat(:,:))**5
+	 
+         dust_in = dust_mmr_ref*exp(nu_dust*(1-bk**(70./zmax)))
        endif
 	
 
