@@ -70,6 +70,9 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
   REAL(r_def) :: cfc113_mix_ratio = 4.826e-10
   REAL(r_def) :: hcfc22_mix_ratio = 6.866e-10
   REAL(r_def) :: hfc134a_mix_ratio = 2.536e-10
+  
+  REAL(r_def) :: dust_mmr_ref = 1.0e-10
+  REAL(r_def) :: nu_dust = 0.007
 
 
   ! Whether to include radiative effects of particular gases
@@ -133,6 +136,7 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
                              inc_h2o, inc_co2, inc_co, inc_o3, inc_n2o, inc_n2, inc_ch4, inc_o2, &
                              inc_so2, inc_cfc11, inc_cfc12, inc_cfc113, inc_hcfc22, inc_hfc134a, &
                              use_pressure_interp_for_half_levels,  &
-                             frierson_solar_rad, del_sol, del_sw
+                             frierson_solar_rad, del_sol, del_sw, &
+                             dust_mmr_ref, nu_dust
 
 end module socrates_config_mod
