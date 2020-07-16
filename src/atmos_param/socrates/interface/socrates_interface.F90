@@ -767,7 +767,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        temp_tend, net_surf_sw_down, surf_lw_down, delta_t)  
 
     use astronomy_mod,       only: diurnal_solar
-    use constants_mod,       only: pi, wtmco2, wtmozone, rdgas, gas_constant, dust_mmr_ref, nu_dust
+    use constants_mod,       only: pi, wtmco2, wtmozone, rdgas, gas_constant
     use interpolator_mod,    only: interpolator
     USE socrates_config_mod
     use vert_coordinate_mod, only: compute_vert_coord
@@ -788,6 +788,8 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real,    intent(out), dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
+    integer, parameter :: max_levels=100
+    real, dimension(max_levels+1) :: pk, bk
 
     real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, zmax
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: tg_tmp_soc, q_soc, ozone_soc, co2_soc, dust_soc, p_full_soc, output_heating_rate_sw, output_heating_rate_lw, output_heating_rate_total, z_full_soc
