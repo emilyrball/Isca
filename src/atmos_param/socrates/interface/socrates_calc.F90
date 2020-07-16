@@ -170,7 +170,7 @@ call set_bound(control, dimen, spectrum, bound, n_profile,                     &
 
 call set_cld(control, dimen, spectrum, cld, n_profile)
 
-call set_aer(control, dimen, spectrum, aer, n_profile, dust)
+call set_aer(control, dimen, spectrum, aer, n_profile, n_layer, dust)
 
 ! DEPENDS ON: radiance_calc
 call radiance_calc(control, dimen, spectrum, atm, cld, aer, bound, radout)
