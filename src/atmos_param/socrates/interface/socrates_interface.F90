@@ -788,6 +788,8 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, allocatable, dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
+    ! loop variables
+    integer :: i, j, k
     
     real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, sin_lat, zmax
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: tg_tmp_soc, q_soc, ozone_soc, co2_soc, dust_soc, p_full_soc, output_heating_rate_sw, output_heating_rate_lw, output_heating_rate_total, z_full_soc
@@ -1083,8 +1085,11 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
          zmax(:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
 	              -(32+18*sin((mars_solar_long-158.))*pi/180.)*(sin_lat(:,:))**4 &
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
-	 
-         dust_in = dust_mmr_ref*exp(nu_dust*(1-bk**(70./zmax)))
+	 do i=1, size(temp_in,1)
+	   do j=1, size(temp_in,2)
+	     dust_in(i, j, :) = dust_mmr_ref*exp(nu_dust*(1-bk(:)**(70./zmax(i,j))))
+	   end do
+	 end do
        endif
 	
 
