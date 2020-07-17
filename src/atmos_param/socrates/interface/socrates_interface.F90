@@ -1078,11 +1078,9 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        endif
        
        if (some_dust_condition == .true.) then
-       
-         sin_lat (:,:) = sin(rad_lat(:,:))
-       
          call get_pk_bk(pk, bk)
-         zmax (:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
+	 sin_lat(:,:) = sin(rad_lat(:,:))
+         zmax(:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
 	              -(32_18*sin((mars_solar_long-158))*pi/180.)*(sin_lat(:,:))**4 &
 		      -8*sin((mars_solar_long-158)*pi/180.)*(sin_lat(:,:))**5
 	 
