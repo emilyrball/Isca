@@ -789,7 +789,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
 
     integer(i_def) :: n_profile, n_layer
     
-    real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, zmax
+    real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, sin_lat, zmax
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: tg_tmp_soc, q_soc, ozone_soc, co2_soc, dust_soc, p_full_soc, output_heating_rate_sw, output_heating_rate_lw, output_heating_rate_total, z_full_soc
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: p_half_soc, t_half_out, z_half_soc,output_soc_flux_sw_down, output_soc_flux_sw_up, output_soc_flux_lw_down, output_soc_flux_lw_up
 
@@ -1081,8 +1081,8 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
          call get_pk_bk(pk, bk)
 	 sin_lat(:,:) = sin(rad_lat(:,:))
          zmax(:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
-	              -(32_18*sin((mars_solar_long-158))*pi/180.)*(sin_lat(:,:))**4 &
-		      -8*sin((mars_solar_long-158)*pi/180.)*(sin_lat(:,:))**5
+	              -(32+18*sin((mars_solar_long-158.))*pi/180.)*(sin_lat(:,:))**4 &
+		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 
          dust_in = dust_mmr_ref*exp(nu_dust*(1-bk**(70./zmax)))
        endif
