@@ -785,9 +785,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     
     integer :: num_levels
     
-    call get_num_levels(num_levels)
-    
-    real, dimension(num_levels+1)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    real, allocatable, dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
     
@@ -802,6 +800,9 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
+    
+    call get_num_levels(num_levels)
+    allocate(pk(num_levels+1),bk(num_levels+1))
     
         !check if we really want to recompute radiation
         ! alarm
@@ -1290,6 +1291,8 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
             used = send_data ( id_rrsun, rrsun, Time_diag)        
         endif            
         ! Diagnostics sent 
+	
+	deallocate(pk, bk)
 
 end subroutine run_socrates  
 
