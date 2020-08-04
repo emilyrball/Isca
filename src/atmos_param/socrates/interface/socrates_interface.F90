@@ -1083,7 +1083,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
          call get_pk_bk(pk, bk)
 	 sin_lat(:,:) = sin(rad_lat(:,:))
          zmax(:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
-	              -(32+18*sin((mars_solar_long-158.))*pi/180.)*(sin_lat(:,:))**4 &
+	              -(32+18*sin((mars_solar_long-158.)*pi/180.))*(sin_lat(:,:))**4 &
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 do i=1, size(temp_in,1)
 	   do j=1, size(temp_in,2)

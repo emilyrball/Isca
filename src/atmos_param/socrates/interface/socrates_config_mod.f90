@@ -71,7 +71,7 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
   REAL(r_def) :: hcfc22_mix_ratio = 6.866e-10
   REAL(r_def) :: hfc134a_mix_ratio = 2.536e-10
   
-  REAL(r_def) :: dust_mmr_ref = 1.0e-10
+  REAL(r_def) :: dust_mmr_ref = 1.0e-06
   REAL(r_def) :: nu_dust = 0.007
 
 
