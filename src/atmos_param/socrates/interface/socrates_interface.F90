@@ -772,7 +772,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     USE socrates_config_mod
     use vert_coordinate_mod,   only: compute_vert_coord
     use transforms_mod,        only: get_sin_lat
-    use spectral_dynamics_mod, only: get_pk_bk, get_num_levels
+    use spectral_dynamics_mod, only: get_num_levels
 
     ! Input time
     type(time_type), intent(in)           :: Time, Time_diag
@@ -782,10 +782,6 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, intent(inout), dimension(:,:,:) :: temp_tend
     real, intent(out), dimension(:,:)     :: net_surf_sw_down, surf_lw_down 
     real, intent(in) :: delta_t
-    
-    integer :: num_levels
-    
-    real, allocatable, dimension(:)       :: pk, bk               !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     integer(i_def) :: n_profile, n_layer
     ! loop variables
@@ -802,9 +798,6 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
-    
-    call get_num_levels(num_levels)
-    allocate(pk(num_levels+1),bk(num_levels+1))
     
         !check if we really want to recompute radiation
         ! alarm
@@ -1080,14 +1073,13 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        endif
        
        if (some_dust_condition == .true.) then
-         call get_pk_bk(pk, bk)
 	 sin_lat(:,:) = sin(rad_lat(:,:))
          zmax(:,:) = 60 + 18*sin((mars_solar_long-158.)*pi/180.) &
 	              -(32+18*sin((mars_solar_long-158.)*pi/180.))*(sin_lat(:,:))**4 &
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 do i=1, size(temp_in,1)
 	   do j=1, size(temp_in,2)
-	     dust_in(i, j, :) = dust_mmr_ref*exp(nu_dust*(1-bk(:)**(70./zmax(i,j))))
+	     dust_in(i, j, :) = dust_mmr_ref*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
 	   end do
 	 end do
        endif
