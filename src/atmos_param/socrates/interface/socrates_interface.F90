@@ -59,7 +59,7 @@ MODULE socrates_interface_mod
   INTEGER :: id_soc_flux_lw, id_soc_flux_sw
   INTEGER :: id_soc_olr, id_soc_toa_sw
   INTEGER :: id_soc_toa_sw_down
-  INTEGER :: id_soc_ozone, id_soc_co2, id_soc_dust, id_soc_coszen
+  INTEGER :: id_soc_ozone, id_soc_co2, id_soc_cdod, id_soc_dust, id_soc_coszen
   INTEGER :: n_soc_bands_lw, n_soc_bands_sw
   INTEGER :: n_soc_bands_lw_hires, n_soc_bands_sw_hires
   INTEGER :: id_soc_bins_lw, id_soc_bins_sw
@@ -70,12 +70,12 @@ MODULE socrates_interface_mod
   CHARACTER(len=10), PARAMETER :: soc_mod_name = 'socrates'
   REAL :: missing_value = -999
 
-  type(interpolate_type),save                :: o3_interp, co2_interp            ! use external file for ozone and co2
+  type(interpolate_type),save                :: o3_interp, co2_interp, cdod_interp     ! use external file for ozone and co2
 
   REAL :: dt_last !Time of last radiation calculation - used to tell whether it is time to recompute radiation or not
   REAL(r_def), allocatable, dimension(:,:,:) :: tdt_soc_sw_store, tdt_soc_lw_store
   REAL(r_def), allocatable, dimension(:,:,:) :: thd_sw_flux_net_store, thd_lw_flux_net_store
-  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_dust_store
+  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_cdod_store, thd_dust_store
   REAL(r_def), allocatable, dimension(:,:)   :: net_surf_sw_down_store, surf_lw_down_store, surf_lw_net_store, &
                                                 surf_sw_down_store, toa_sw_down_store, &
                                                 toa_sw_store, olr_store, coszen_store
@@ -319,6 +319,11 @@ write(stdlog_unit, socrates_rad_nml)
          'socrates Co2', &
          'mmr', missing_value=missing_value               )
 	 
+    id_soc_cdod   = &
+         register_diag_field ( soc_mod_name, 'soc_cdod', axes(1:3), Time, &
+         'socrates CDOD', &
+         'none', missing_value=missing_value               )
+	 
     id_soc_dust   = &
          register_diag_field ( soc_mod_name, 'soc_dust', axes(1:3), Time, &
          'socrates Dust', &
@@ -348,7 +353,11 @@ write(stdlog_unit, socrates_rad_nml)
       
       if(do_read_co2)then
          call interpolator_init (co2_interp, trim(co2_file_name)//'.nc', lonb, latb, data_out_of_bounds=(/ZERO/))
-      endif      
+      endif     
+      
+      if(do_read_cdod)then
+         call interpolator_init (cdod_interp, trim(cdod_file_name)//'.nc', lonb, latb, data_out_of_bounds=(/ZERO/))
+      endif
 
     if (mod((size(lonb,1)-1)*(size(latb,1)-1), chunk_size) .ne. 0) then
     
@@ -414,6 +423,10 @@ write(stdlog_unit, socrates_rad_nml)
 
         if (id_soc_co2 > 0 ) then 
             allocate(thd_co2_store(size(lonb,1)-1, size(latb,2)-1, num_levels))
+        endif
+	
+	if (id_soc_cdod > 0 ) then 
+            allocate(thd_cdod_store(size(lonb,1)-1, size(latb,2)-1, num_levels))
         endif
 	
 	if (id_soc_dust > 0) then 
@@ -795,7 +808,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     integer :: seconds, days, year_in_s
     real :: r_seconds, r_days, r_total_seconds, frac_of_day, frac_of_year, gmt, time_since_ae, rrsun, dt_rad_radians, day_in_s, r_solday, r_dt_rad_avg, mars_solar_long, dec, ang_out, true_anomaly
     real, dimension(size(temp_in,1), size(temp_in,2)) :: coszen, fracsun, surf_lw_net, olr, toa_sw, p2, toa_sw_down, surf_sw_down 
-    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, dust_in
+    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, cdod_in, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
     
@@ -856,6 +869,10 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
                     co2_in = thd_co2_store
                 endif
 		
+		if (id_soc_cdod > 0) then 
+                    cdod_in = thd_cdod_store
+                endif
+		
 		if (id_soc_dust > 0) then 
                     dust_in = thd_dust_store
                 endif 
@@ -895,6 +912,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
                 coszen = 0.
                 ozone_in = 0.
                 co2_in = 0.
+		cdod_in = 0.
 		dust_in = 0.
                 outputted_soc_spectral_olr = 0.
                 mars_solar_long = 0.
@@ -955,6 +973,9 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
             if(id_soc_ozone > 0) then 
                 used = send_data ( id_soc_ozone, ozone_in, Time_diag)
             endif
+	    if(id_soc_cdod > 0) then 
+                used = send_data ( id_soc_cdod, cdod_in, Time_diag)
+            endif 
 	    if(id_soc_dust > 0) then 
                 used = send_data ( id_soc_dust, dust_in, Time_diag)
             endif
@@ -1070,6 +1091,15 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
              ! Molar mass of dry air calculated from gas_constant / rdgas, and converted into g/mol from kg/mol by multiplying by 1000. This conversion is necessary because wtmco2 is in g/mol.
              
          endif
+       endif
+       
+       if(do_read_cdod)then
+         call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name)) 				!!!!!!!! got to here ish
+         if (input_cdod_file_is_mmr==.false.) then
+             ozone_in = ozone_in * wtmozone / (1000. * gas_constant / rdgas ) !Socrates expects all abundances to be mass mixing ratio. So if input file is volume mixing ratio, it must be converted to mass mixing ratio using the molar masses of dry air and ozone
+             ! Molar mass of dry air calculated from gas_constant / rdgas, and converted into g/mol from kg/mol by multiplying by 1000. This conversion is necessary because wtmozone is in g/mol.
+             
+         endif 
        endif
        
        if (some_dust_condition == .true.) then
