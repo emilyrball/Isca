@@ -71,7 +71,8 @@ MODULE socrates_interface_mod
   CHARACTER(len=10), PARAMETER :: soc_mod_name = 'socrates'
   REAL :: missing_value = -999
 
-  type(interpolate_type),save                :: o3_interp, co2_interp, cdod_interp     ! use external file for ozone and co2
+  type(interpolate_type),save                :: o3_interp, co2_interp
+  type(interpolate_type),save                :: cdod_interp     ! use external file for dust optical depth
 
   REAL :: dt_last !Time of last radiation calculation - used to tell whether it is time to recompute radiation or not
   REAL(r_def), allocatable, dimension(:,:,:) :: tdt_soc_sw_store, tdt_soc_lw_store
@@ -1115,11 +1116,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        
        if(do_read_cdod)then
          call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name)) 				
-	 if (input_cdod_file_is_mmr==.false.) then
-             dust_mmr_ref = 5.e-4*cdod_in / (20. - 5.e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
-         else
-	     
-         endif
+         dust_mmr_ref = 5.e-4*cdod_in / (20. - 5.e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
        else
          dust_mmr_ref = dust_mix_ratio
        endif
