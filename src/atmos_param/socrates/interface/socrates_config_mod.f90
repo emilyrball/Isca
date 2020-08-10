@@ -141,6 +141,6 @@ LOGICAL :: l_planet_grey_surface = .TRUE.
                              inc_so2, inc_cfc11, inc_cfc12, inc_cfc113, inc_hcfc22, inc_hfc134a, &
                              use_pressure_interp_for_half_levels,  &
                              frierson_solar_rad, del_sol, del_sw, &
-                             dust_mmr_ref, nu_dust
+                             dust_mix_ratio, nu_dust
 
 end module socrates_config_mod

@@ -59,7 +59,8 @@ MODULE socrates_interface_mod
   INTEGER :: id_soc_flux_lw, id_soc_flux_sw
   INTEGER :: id_soc_olr, id_soc_toa_sw
   INTEGER :: id_soc_toa_sw_down
-  INTEGER :: id_soc_ozone, id_soc_co2, id_soc_cdod, id_soc_dust, id_soc_coszen
+  INTEGER :: id_soc_ozone, id_soc_co2, id_soc_cdod, id_soc_dust_mmr_ref, &
+             id_soc_dust, id_soc_coszen
   INTEGER :: n_soc_bands_lw, n_soc_bands_sw
   INTEGER :: n_soc_bands_lw_hires, n_soc_bands_sw_hires
   INTEGER :: id_soc_bins_lw, id_soc_bins_sw
@@ -75,7 +76,8 @@ MODULE socrates_interface_mod
   REAL :: dt_last !Time of last radiation calculation - used to tell whether it is time to recompute radiation or not
   REAL(r_def), allocatable, dimension(:,:,:) :: tdt_soc_sw_store, tdt_soc_lw_store
   REAL(r_def), allocatable, dimension(:,:,:) :: thd_sw_flux_net_store, thd_lw_flux_net_store
-  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_cdod_store, thd_dust_store
+  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_cdod_store, thd_dust_store, &
+                                                thd_dust_mmr_ref_store
   REAL(r_def), allocatable, dimension(:,:)   :: net_surf_sw_down_store, surf_lw_down_store, surf_lw_net_store, &
                                                 surf_sw_down_store, toa_sw_down_store, &
                                                 toa_sw_store, olr_store, coszen_store
@@ -318,7 +320,12 @@ write(stdlog_unit, socrates_rad_nml)
          register_diag_field ( soc_mod_name, 'soc_co2', axes(1:3), Time, &
          'socrates Co2', &
          'mmr', missing_value=missing_value               )
-	 
+
+    id_soc_dust_mmr_ref   = &
+         register_diag_field ( soc_mod_name, 'dust_mmr_ref', axes(1:3), Time, &
+         'socrates dust_mmr_ref', &
+         'mmr', missing_value=missing_value               )
+ 
     id_soc_cdod   = &
          register_diag_field ( soc_mod_name, 'soc_cdod', axes(1:3), Time, &
          'socrates CDOD', &
@@ -427,6 +434,11 @@ write(stdlog_unit, socrates_rad_nml)
 	
 	if (id_soc_cdod > 0 ) then 
             allocate(thd_cdod_store(size(lonb,1)-1, size(latb,2)-1, num_levels))
+        endif
+
+        if (id_soc_dust_mmr_ref > 0) then
+            allocate(thd_dust_mmr_ref_store(size(lonb,1)-1, size(latb,2)-1, &
+num_levels))
         endif
 	
 	if (id_soc_dust > 0) then 
