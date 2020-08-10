@@ -808,7 +808,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     integer :: seconds, days, year_in_s
     real :: r_seconds, r_days, r_total_seconds, frac_of_day, frac_of_year, gmt, time_since_ae, rrsun, dt_rad_radians, day_in_s, r_solday, r_dt_rad_avg, mars_solar_long, dec, ang_out, true_anomaly
     real, dimension(size(temp_in,1), size(temp_in,2)) :: coszen, fracsun, surf_lw_net, olr, toa_sw, p2, toa_sw_down, surf_sw_down 
-    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, cdod_in, dust_in
+    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, cdod_in, dust_mmr_ref, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
     
@@ -873,6 +873,10 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
                     cdod_in = thd_cdod_store
                 endif
 		
+		if (id_soc_dust_mmr_ref >0) then
+		    dust_mmr_ref = thd_dust_mmr_ref_store
+		endif
+		
 		if (id_soc_dust > 0) then 
                     dust_in = thd_dust_store
                 endif 
@@ -913,6 +917,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
                 ozone_in = 0.
                 co2_in = 0.
 		cdod_in = 0.
+		dust_mmr_ref = 0.
 		dust_in = 0.
                 outputted_soc_spectral_olr = 0.
                 mars_solar_long = 0.
@@ -975,6 +980,9 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
             endif
 	    if(id_soc_cdod > 0) then 
                 used = send_data ( id_soc_cdod, cdod_in, Time_diag)
+            endif 
+	    if(id_soc_dust_mmr_ref > 0) then 
+                used = send_data ( id_soc_dust_mmr_ref, cdod_in, Time_diag)
             endif 
 	    if(id_soc_dust > 0) then 
                 used = send_data ( id_soc_dust, dust_in, Time_diag)
@@ -1094,12 +1102,14 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        endif
        
        if(do_read_cdod)then
-         call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name)) 				!!!!!!!! got to here ish
-         if (input_cdod_file_is_mmr==.false.) then
-             ozone_in = ozone_in * wtmozone / (1000. * gas_constant / rdgas ) !Socrates expects all abundances to be mass mixing ratio. So if input file is volume mixing ratio, it must be converted to mass mixing ratio using the molar masses of dry air and ozone
-             ! Molar mass of dry air calculated from gas_constant / rdgas, and converted into g/mol from kg/mol by multiplying by 1000. This conversion is necessary because wtmozone is in g/mol.
-             
-         endif 
+         call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name)) 				
+	 if (input_cdod_file_is_mmr==.false.) then
+             dust_mmr_ref = 5.e-4*cdod_in / (20. - 5.e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
+         else
+	     
+         endif
+       else
+         dust_mmr_ref = dust_mix_ratio
        endif
        
        if (some_dust_condition == .true.) then
@@ -1109,7 +1119,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 do i=1, size(temp_in,1)
 	   do j=1, size(temp_in,2)
-	     dust_in(i, j, :) = dust_mmr_ref*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
+	     dust_in(i, j, :) = dust_mmr_ref(i, j, :)*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
 	   end do
 	 end do
        endif
@@ -1216,6 +1226,14 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
                 thd_co2_store = co2_in
             endif
 	    
+	    if (id_soc_cdod > 0) then
+	        thd_cdod_store = cdod_in
+	    endif
+	    
+	    if (id_soc_dust_mmr_ref > 0) then
+	        thd_dust_mmr_ref_store = dust_mmr_ref
+	    endif
+	    
 	    if (id_soc_dust > 0) then 
                 thd_dust_store = dust_in
             endif
@@ -1290,6 +1308,12 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
         endif 
         if(id_soc_ozone > 0) then 
             used = send_data ( id_soc_ozone, ozone_in, Time_diag)
+        endif
+	if(id_soc_cdod > 0) then 
+            used = send_data ( id_soc_cdod, cdod_in, Time_diag)
+        endif 
+	if(id_soc_dust_mmr_ref > 0) then 
+            used = send_data ( id_soc_dust_mmr_ref, dust_mmr_ref, Time_diag)
         endif 
 	if(id_soc_dust > 0) then 
             used = send_data ( id_soc_dust, dust_in, Time_diag)
@@ -1316,8 +1340,6 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
             used = send_data ( id_rrsun, rrsun, Time_diag)        
         endif            
         ! Diagnostics sent 
-	
-	deallocate(pk, bk)
 
 end subroutine run_socrates  
 
@@ -1328,6 +1350,7 @@ subroutine run_socrates_end
 
     if(do_read_ozone) call interpolator_end(o3_interp)
     if(do_read_co2)   call interpolator_end(co2_interp)
+    if(do_read_cdod)  call interpolator_end(cdod_interp)
     
 
 end subroutine run_socrates_end
