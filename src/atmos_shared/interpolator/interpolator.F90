@@ -78,6 +78,7 @@ use time_manager_mod,  only : time_type,   &
                               get_calendar_type, &
                               JULIAN, NOLEAP, &
                               THIRTY_DAY_MONTHS, & !mj
+			      NO_CALENDAR, &
                               get_date_julian, set_date_no_leap, &
                               set_date_julian, get_date_no_leap, &
                               print_date, &
@@ -542,14 +543,17 @@ do i = 1, ndim
           call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
       end select
 
-       clim_type%climatological_year = (fileyr == 0)
+       clim_type%climatological_year = (fileyr == 0 .and.  &
+           model_calendar /= NO_CALENDAR)
       if (.not. clim_type%climatological_year) then
 
 !----------------------------------------------------------------------
 !    if file date has a non-zero year in the base time, determine that
 !    base_time based on the netcdf info.
 !----------------------------------------------------------------------
-        if ( (model_calendar == JULIAN .and.   &
+        if ( (model_calendar == NO_CALENDAR .and.   &
+              trim(file_calendar) == 'no_calendar')  .or. &
+	      (model_calendar == JULIAN .and.   &
               trim(file_calendar) == 'julian')  .or. &
               (model_calendar == NOLEAP .and.   &
                trim(file_calendar) == 'noleap')  .or. &
@@ -660,6 +664,15 @@ do i = 1, ndim
 !---------------------------------------------------------------------
               clim_type%time_slice(n) = &
                  set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 86400 ),INT(time_in(n)))  &
+                  + base_time
+
+!---------------------------------------------------------------------
+!    no_calendar mars
+!---------------------------------------------------------------------
+	    else if (model_calendar == NO_CALENDAR .and.   &
+                  trim(file_calendar) == 'no_calendar')
+	      clim_type%time_slice(n) = &
+                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))  &
                   + base_time
 
 !---------------------------------------------------------------------
