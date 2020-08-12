@@ -24,7 +24,7 @@ cb = SocratesCodeBase.from_directory(GFDL_BASE)
 
 cb.compile()  # compile the source code to working directory $GFDL_WORK/codebase
 
-inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/standard_dust_scenario_10MY.nc')]
+inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/dust_scenario.nc')]
 
 
 # create a diagnostics output file for daily snapshots
@@ -200,7 +200,7 @@ namelist = Namelist({
         'co2_ppmv': 0.949*1e6,
         'n2_mix_ratio': 0.026*(28.0134)/(1000.*8.314/192.0),
 	'do_read_cdod':True,
-	'cdod_file_name':'standard_dust_scenario_10MY',
+	'cdod_file_name':'dust_scenario',
 	'cdod_field_name':'cdod'
     }, 
 

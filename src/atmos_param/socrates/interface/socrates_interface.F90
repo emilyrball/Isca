@@ -365,6 +365,7 @@ write(stdlog_unit, socrates_rad_nml)
       
       if(do_read_cdod)then
          call interpolator_init (cdod_interp, trim(cdod_file_name)//'.nc', lonb, latb, data_out_of_bounds=(/ZERO/))
+         print*, 'CDOD interpolator initialized'
       endif
 
     if (mod((size(lonb,1)-1)*(size(latb,1)-1), chunk_size) .ne. 0) then
@@ -1115,7 +1116,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        endif
        
        if(do_read_cdod)then
-         call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name)) 				
+         call interpolator( cdod_interp, Time_diag, p_half_in, cdod_in, trim(cdod_field_name)) 				
          dust_mmr_ref = 5.e-4*cdod_in / (20. - 5.e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
        else
          dust_mmr_ref = dust_mix_ratio

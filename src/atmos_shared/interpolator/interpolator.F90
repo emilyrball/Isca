@@ -670,7 +670,7 @@ do i = 1, ndim
 !    no_calendar mars
 !---------------------------------------------------------------------
 	    else if (model_calendar == NO_CALENDAR .and.   &
-                  trim(file_calendar) == 'no_calendar')
+                  trim(file_calendar) == 'no_calendar')  then
 	      clim_type%time_slice(n) = &
                  set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))  &
                   + base_time
