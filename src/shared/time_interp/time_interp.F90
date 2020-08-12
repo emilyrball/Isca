@@ -201,7 +201,7 @@ interface time_interp
 end interface
 ! </INTERFACE>
 
-integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3
+integer, public, parameter :: NONE=0, YEAR=1, MONTH=2, DAY=3, MY=4
 
 !-----------------------------------------------------------------------
 
@@ -705,6 +705,7 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
   if (present(modtime)) then
      mtime = modtime
      Time_mod = (Timelist(1)+Timelist(n))/2
+     if (mtime/=MY) then
      call get_date (Time_mod, yrmod, momod, dymod, hr, mn, se)
      mod_leapyear = leap_year(Time_mod)
   endif
@@ -728,6 +729,8 @@ type(time_type) :: T, Ts, Te, Td, Period, Time_mod
          Period = set_time(0,days_in_month(Time_mod))
      case (DAY)
          Period = set_time(0,1)
+     case (MY)
+         Period = set_time(0, 669)
      case default
          call error_handler ('invalid value for argument modtime')
   end select
