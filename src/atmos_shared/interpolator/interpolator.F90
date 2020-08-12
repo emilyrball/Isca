@@ -148,6 +148,7 @@ integer                  :: is,ie,js,je
 integer                  :: vertical_indices ! direction of vertical 
                                               ! data axis
 logical                  :: climatological_year ! Is data for year = 0000?
+logical			 :: climatology_mars
 
 !Field specific data  for nfields
 type(fieldtype),   pointer :: field_type(:) =>NULL()   ! NetCDF field type
@@ -262,6 +263,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
+     Out%climatology_mars = In%climatology_mars
      Out%field_type => In%field_type
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
      if (associated(In%time_init    )) Out%time_init     =>  In%time_init 
@@ -544,6 +546,7 @@ do i = 1, ndim
       end select
 
        clim_type%climatological_year = (fileyr == 0)
+       clim_type%climatology_mars = (fileyr == 0 .and. model_calendar==NO_CALENDAR)
        
       if (.not. clim_type%climatological_year) then
 
@@ -1288,7 +1291,7 @@ integer :: i, n
 
 
     if (clim_type%climatological_year) then
-      if (model_calendar==NO_CALENDAR) then
+      if (clim_type%climatology_mars) then
         if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
         else
@@ -1616,7 +1619,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !                                trim(clim_type%file_name), mpp_pe()
 
     if (clim_type%climatological_year) then
-      if (model_calendar==NO_CALENDAR) then
+      if (clim_type%climatology_mars) then
          if (size(clim_type%time_slice) > 1) then
             call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
          else
@@ -2028,7 +2031,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 3d--',  &
 !                                trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
-      if (model_calendar==NO_CALENDAR) then
+      if (clim_type%climatology_mars) then
          if (size(clim_type%time_slice) > 1) then
             call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
          else
@@ -2418,7 +2421,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !                                   trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
 !++lwh
-       if (model_calendar==NO_CALENDAR) then
+       if (clim_type%climatology_mars) then
          if (size(clim_type%time_slice) > 1) then
             call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
          else
