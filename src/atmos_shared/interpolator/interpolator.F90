@@ -644,6 +644,7 @@ do i = 1, ndim
 !! year, not the displacement from a base_time.
               clim_type%time_slice(n) = &
                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 86400 ),INT(time_in(n)))
+	    endif
           else
 
 !--------------------------------------------------------------------
@@ -1287,14 +1288,24 @@ integer :: i, n
 
 
     if (clim_type%climatological_year) then
-!++lwh
-       if (size(clim_type%time_slice) > 1) then
-          call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
-       else
+      if (model_calendar==NO_CALENDAR) then
+        if (size(clim_type%time_slice) > 1) then
+          call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
+        else
           taum = 1
           taup = 1
           clim_type%tweight = 0.
-       end if
+        end if
+      else
+!++lwh
+        if (size(clim_type%time_slice) > 1) then
+           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
+        else
+           taum = 1
+           taup = 1
+           clim_type%tweight = 0.
+        end if
+      endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -1622,6 +1633,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
+     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -2033,6 +2045,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
+     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -2422,6 +2435,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
+     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
