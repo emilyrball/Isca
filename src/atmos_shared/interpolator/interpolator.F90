@@ -148,7 +148,7 @@ integer                  :: is,ie,js,je
 integer                  :: vertical_indices ! direction of vertical 
                                               ! data axis
 logical                  :: climatological_year ! Is data for year = 0000?
-logical			 :: climatology_mars
+logical			 :: mars
 
 !Field specific data  for nfields
 type(fieldtype),   pointer :: field_type(:) =>NULL()   ! NetCDF field type
@@ -263,7 +263,7 @@ type(interpolate_type), intent(inout) :: Out
      Out%je = In%je
      Out%vertical_indices = In%vertical_indices
      Out%climatological_year = In%climatological_year
-     Out%climatology_mars = In%climatology_mars
+     Out%mars = In%mars
      Out%field_type => In%field_type
      if (associated(In%field_name   )) Out%field_name    =>  In%field_name
      if (associated(In%time_init    )) Out%time_init     =>  In%time_init 
@@ -545,10 +545,11 @@ do i = 1, ndim
           call mpp_error(FATAL,'Interpolator_init : Time units not recognised in file '//file_name)
       end select
 
-       clim_type%climatological_year = (fileyr == 0)
-       clim_type%climatology_mars = (fileyr == 0 .and. model_calendar==NO_CALENDAR)
+       clim_type%climatological_year = (fileyr == 0 .and. model_calendar/=NO_CALENDAR)
+       clim_type%mars = (fileyr == 0 .and. model_calendar==NO_CALENDAR)
        
-      if (.not. clim_type%climatological_year) then
+      if (.not. clim_type%climatological_year .and. .not. clim_type%mars) then
+        
 
 !----------------------------------------------------------------------
 !    if file date has a non-zero year in the base time, determine that
@@ -635,11 +636,6 @@ do i = 1, ndim
             
 
           if (clim_type%climatological_year) then
-	    if (model_calendar == NO_CALENDAR .and.   &
-                  trim(file_calendar) == 'no_calendar')  then
-	      clim_type%time_slice(n) = &
-                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))
-	    else
 !! RSH NOTE:
 !! for this case, do not add base_time. time_slice will be sent to
 !! time_interp_list with the optional argument modtime=YEAR, so that
@@ -647,8 +643,11 @@ do i = 1, ndim
 !! year, not the displacement from a base_time.
               clim_type%time_slice(n) = &
                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 86400 ),INT(time_in(n)))
-	    endif
-          else
+          else if (clim_type%mars) then
+	      clim_type%time_slice(n) = &
+                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))  &
+		 + base_time
+	  else
 
 !--------------------------------------------------------------------
 !    if fileyr /= 0 (i.e., climatological_year=F),
@@ -1289,15 +1288,6 @@ integer :: i, n
 
 
     if (clim_type%climatological_year) then
-      if (clim_type%climatology_mars) then
-        if (size(clim_type%time_slice) > 1) then
-          call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
-        else
-          taum = 1
-          taup = 1
-          clim_type%tweight = 0.
-        end if
-      else
 !++lwh
         if (size(clim_type%time_slice) > 1) then
            call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
@@ -1306,7 +1296,6 @@ integer :: i, n
            taup = 1
            clim_type%tweight = 0.
         end if
-      endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -1617,15 +1606,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !                                trim(clim_type%file_name), mpp_pe()
 
     if (clim_type%climatological_year) then
-      if (clim_type%climatology_mars) then
-         if (size(clim_type%time_slice) > 1) then
-            call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
-         else
-            taum = 1
-            taup = 1
-            clim_type%tweight = 0.
-         end if
-      else
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
@@ -2029,15 +2009,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 3d--',  &
 !                                trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
-      if (clim_type%climatology_mars) then
-         if (size(clim_type%time_slice) > 1) then
-            call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
-         else
-            taum = 1
-            taup = 1
-            clim_type%tweight = 0.
-         end if
-      else
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
@@ -2418,16 +2389,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 !   print *, 'TIME INTERPOLATION NOT SEPARATED 2d--',  &
 !                                   trim(clim_type%file_name), mpp_pe()
     if (clim_type%climatological_year) then
-!++lwh
-       if (clim_type%climatology_mars) then
-         if (size(clim_type%time_slice) > 1) then
-            call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=MY )
-         else
-            taum = 1
-            taup = 1
-            clim_type%tweight = 0.
-         end if
-      else
 !++lwh
        if (size(clim_type%time_slice) > 1) then
           call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup, modtime=YEAR )
