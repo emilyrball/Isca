@@ -1032,9 +1032,7 @@ else
    end do
 !--lwh
 endif
-
 deallocate(varfields)
-
 
 if( clim_type%TIME_FLAG .eq. SEASONAL ) then
 ! Read all the data at this point.
@@ -1064,7 +1062,9 @@ if( clim_type%TIME_FLAG .eq. NOTIME ) then
      call read_data_no_time_axis( clim_type, clim_type%field_type(i), &
                                   clim_type%data(:,:,:,1,i), i )
    enddo
+   print*, 1065
    call mpp_close (unit)
+   print*, 1067
 endif
 
 if (present (single_year_file)) then
@@ -1072,9 +1072,7 @@ if (present (single_year_file)) then
 endif
 
 module_is_initialized = .true.
-
 call write_version_number (version, tagname)
-
 end subroutine interpolator_init
 
  subroutine cell_center2(q1, q2, q3, q4, e2)
