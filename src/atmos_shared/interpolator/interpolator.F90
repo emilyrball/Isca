@@ -89,7 +89,7 @@ use time_manager_mod,  only : time_type,   &
                               operator(<), &
                               assignment(=), &
                               decrement_time
-use time_interp_mod,   only : time_interp, YEAR, MY
+use time_interp_mod,   only : time_interp, YEAR
 use constants_mod,     only : grav, PI
 
 implicit none
@@ -646,7 +646,7 @@ do i = 1, ndim
           else if (clim_type%mars) then
 	      clim_type%time_slice(n) = &
                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))  &
-		 + base_time
+                + base_time
 	  else
 
 !--------------------------------------------------------------------
@@ -1286,7 +1286,6 @@ type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: i, n
 
-
     if (clim_type%climatological_year) then
 !++lwh
         if (size(clim_type%time_slice) > 1) then
@@ -1614,7 +1613,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
-     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -1970,7 +1968,6 @@ type(time_type) :: t_prev, t_next
 type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: i, j, k, n
-
 !RG add option to go to 'no time axis' version if clim_type%TIME_FLAG==NOTIME i.e. data has no time, despite input received
 if (clim_type%TIME_FLAG .eq. NOTIME) then
 	call interpolator_3D_no_time_axis(clim_type, phalf, interp_data, field_name, is,js, clim_units)
@@ -2017,7 +2014,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
-     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -2348,7 +2344,6 @@ type(time_type) :: t_prev, t_next
 type(time_type), dimension(2) :: month
 integer :: indexm, indexp, yearm, yearp
 integer :: j, i, n
-
 !RG add option to go to 'no time axis' version if clim_type%TIME_FLAG==NOTIME i.e. data has no time, despite input received
 if (clim_type%TIME_FLAG .eq. NOTIME) then
 	call interpolator_2D_no_time_axis(clim_type, interp_data, field_name, is,js, clim_units)
@@ -2378,7 +2373,6 @@ do i= 1,size(clim_type%field_name(:))
       clim_units = chomp(clim_units)
     endif
 
-
 !----------------------------------------------------------------------
 !   skip the time interpolation portion of this routine if subroutine
 !   obtain_interpolator_time_slices has already been called on this
@@ -2397,7 +2391,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
           taup = 1
           clim_type%tweight = 0.
        end if
-     endif
 !--lwh
     else
        call time_interp(Time, clim_type%time_slice, clim_type%tweight, taum, taup )
@@ -2407,6 +2400,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! read in then enter this loop.
 ! 
     if(clim_type%TIME_FLAG .ne. LINEAR .or. read_all_on_init) then
+      print*, 2410
       clim_type%itaum=taum
       clim_type%itaup=taup
     endif
@@ -2565,6 +2559,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
     if(clim_type%TIME_FLAG .eq. LINEAR .and. &
         (.not. read_all_on_init) ) then
+      print*, 2569
 ! We need 2 time levels. Check we have the correct data.
       clim_type%itaum=0
       clim_type%itaup=0
@@ -2605,6 +2600,7 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
+    print*, 2610
     hinterp_data = (1-clim_type%tweight)*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,i) &
                      + clim_type%tweight*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)

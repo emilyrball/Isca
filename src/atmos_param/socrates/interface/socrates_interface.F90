@@ -77,11 +77,11 @@ MODULE socrates_interface_mod
   REAL :: dt_last !Time of last radiation calculation - used to tell whether it is time to recompute radiation or not
   REAL(r_def), allocatable, dimension(:,:,:) :: tdt_soc_sw_store, tdt_soc_lw_store
   REAL(r_def), allocatable, dimension(:,:,:) :: thd_sw_flux_net_store, thd_lw_flux_net_store
-  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_cdod_store, thd_dust_store, &
-                                                thd_dust_mmr_ref_store
+  REAL(r_def), allocatable, dimension(:,:,:) :: thd_co2_store, thd_ozone_store, thd_dust_store
   REAL(r_def), allocatable, dimension(:,:)   :: net_surf_sw_down_store, surf_lw_down_store, surf_lw_net_store, &
                                                 surf_sw_down_store, toa_sw_down_store, &
-                                                toa_sw_store, olr_store, coszen_store
+                                                toa_sw_store, olr_store, coszen_store, thd_cdod_store, &
+                                                thd_dust_mmr_ref_store
   REAL(r_def), allocatable, dimension(:,:,:) :: outputted_soc_spectral_olr, spectral_olr_store
   REAL(r_def), allocatable, dimension(:)     :: soc_bins_lw, soc_bins_sw
 
@@ -323,12 +323,12 @@ write(stdlog_unit, socrates_rad_nml)
          'mmr', missing_value=missing_value               )
 
     id_soc_dust_mmr_ref   = &
-         register_diag_field ( soc_mod_name, 'dust_mmr_ref', axes(1:3), Time, &
+         register_diag_field ( soc_mod_name, 'dust_mmr_ref', axes(1:2), Time, &
          'socrates dust_mmr_ref', &
          'mmr', missing_value=missing_value               )
  
     id_soc_cdod   = &
-         register_diag_field ( soc_mod_name, 'soc_cdod', axes(1:3), Time, &
+         register_diag_field ( soc_mod_name, 'soc_cdod', axes(1:2), Time, &
          'socrates CDOD', &
          'none', missing_value=missing_value               )
 	 
@@ -435,12 +435,11 @@ write(stdlog_unit, socrates_rad_nml)
         endif
 	
 	if (id_soc_cdod > 0 ) then 
-            allocate(thd_cdod_store(size(lonb,1)-1, size(latb,2)-1, num_levels))
+            allocate(thd_cdod_store(size(lonb,1)-1, size(latb,2)-1))
         endif
 
         if (id_soc_dust_mmr_ref > 0) then
-            allocate(thd_dust_mmr_ref_store(size(lonb,1)-1, size(latb,2)-1, &
-num_levels))
+            allocate(thd_dust_mmr_ref_store(size(lonb,1)-1, size(latb,2)-1))
         endif
 	
 	if (id_soc_dust > 0) then 
@@ -815,6 +814,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     integer :: i, j, k
     
     real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: t_surf_for_soc, rad_lat_soc, rad_lon_soc, albedo_soc, sin_lat, zmax
+    real(r_def), dimension(size(temp_in,1), size(temp_in,2)) :: dust_mmr_ref, cdod_in
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: tg_tmp_soc, q_soc, ozone_soc, co2_soc, dust_soc, p_full_soc, output_heating_rate_sw, output_heating_rate_lw, output_heating_rate_total, z_full_soc
     real(r_def), dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: p_half_soc, t_half_out, z_half_soc,output_soc_flux_sw_down, output_soc_flux_sw_up, output_soc_flux_lw_down, output_soc_flux_lw_up
 
@@ -822,7 +822,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
     integer :: seconds, days, year_in_s
     real :: r_seconds, r_days, r_total_seconds, frac_of_day, frac_of_year, gmt, time_since_ae, rrsun, dt_rad_radians, day_in_s, r_solday, r_dt_rad_avg, mars_solar_long, dec, ang_out, true_anomaly
     real, dimension(size(temp_in,1), size(temp_in,2)) :: coszen, fracsun, surf_lw_net, olr, toa_sw, p2, toa_sw_down, surf_sw_down 
-    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, cdod_in, dust_mmr_ref, dust_in
+    real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)) :: ozone_in, co2_in, dust_in
     real, dimension(size(temp_in,1), size(temp_in,2), size(temp_in,3)+1) :: thd_sw_flux_net, thd_lw_flux_net
     type(time_type) :: Time_loc
     
@@ -1116,7 +1116,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        endif
        
        if(do_read_cdod)then
-         call interpolator( cdod_interp, Time_diag, p_half_in, cdod_in, trim(cdod_field_name)) 				
+         call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name) ) 
          dust_mmr_ref = 5.e-4*cdod_in / (20. - 5.e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
        else
          dust_mmr_ref = dust_mix_ratio
@@ -1129,7 +1129,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 do i=1, size(temp_in,1)
 	   do j=1, size(temp_in,2)
-	     dust_in(i, j, :) = dust_mmr_ref(i, j, :)*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
+	     dust_in(i, j, :) = dust_mmr_ref(i, j)*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
 	   end do
 	 end do
        endif
