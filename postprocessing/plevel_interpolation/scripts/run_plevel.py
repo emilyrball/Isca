@@ -10,8 +10,8 @@ start_time=time.time()
 base_dir='$GFDL_DATA'
 exp_name_list = ['soc_mars_mk36_per_value70.85_none_mld_2.0_with_mola_topo_dust']
 avg_or_daily_list=['daily']
-start_file=46
-end_file=76
+start_file=1
+end_file=22
 nfiles=(end_file-start_file)+1
 
 do_extra_averaging=False #If true, then 6hourly data is averaged into daily data using cdo

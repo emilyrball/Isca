@@ -645,8 +645,7 @@ do i = 1, ndim
                 set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 86400 ),INT(time_in(n)))
           else if (clim_type%mars) then
 	      clim_type%time_slice(n) = &
-                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))  &
-                + base_time
+                set_time(INT( ( time_in(n) - INT(time_in(n)) ) * 88440 ),INT(time_in(n)))
 	  else
 
 !--------------------------------------------------------------------
@@ -2376,7 +2375,7 @@ do i= 1,size(clim_type%field_name(:))
 !----------------------------------------------------------------------
 !   skip the time interpolation portion of this routine if subroutine
 !   obtain_interpolator_time_slices has already been called on this
-!   stewp for this interpolate_type variable.
+!   step for this interpolate_type variable.
 !----------------------------------------------------------------------
 
 if ( .not. clim_type%separate_time_vary_calc) then     
@@ -2400,7 +2399,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 ! read in then enter this loop.
 ! 
     if(clim_type%TIME_FLAG .ne. LINEAR .or. read_all_on_init) then
-      print*, 2410
       clim_type%itaum=taum
       clim_type%itaup=taup
     endif
@@ -2559,7 +2557,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
     if(clim_type%TIME_FLAG .eq. LINEAR .and. &
         (.not. read_all_on_init) ) then
-      print*, 2569
 ! We need 2 time levels. Check we have the correct data.
       clim_type%itaum=0
       clim_type%itaup=0
@@ -2600,7 +2597,6 @@ if ( .not. clim_type%separate_time_vary_calc) then
 
 select case(clim_type%TIME_FLAG)
   case (LINEAR)
-    print*, 2610
     hinterp_data = (1-clim_type%tweight)*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaum,i) &
                      + clim_type%tweight*clim_type%data(istart:iend,jstart:jend,:,clim_type%itaup,i)
 ! case (SEASONAL)
