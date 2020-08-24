@@ -89,7 +89,8 @@ real    :: dt_rad_avg     = -1
 character(len=32) :: rad_scheme = 'frierson'
 
 integer, parameter :: B_GEEN = 1,  B_FRIERSON = 2, &
-                      B_BYRNE = 3, B_SCHNEIDER_LIU=4
+                      B_BYRNE = 3, B_SCHNEIDER_LIU=4, &
+                      B_FRIERSON_DUST=5
 integer, private :: sw_scheme = B_FRIERSON
 integer, private :: lw_scheme = B_FRIERSON
 
@@ -118,6 +119,8 @@ real :: bog_a = 0.8678
 real :: bog_b = 1997.9
 real :: bog_mu = 1.0
 
+real :: W = 1.0e-06              ! parameter for dust radiation scheme
+
 real, allocatable, dimension(:,:)   :: insolation, p2, lw_tau_0, sw_tau_0 !s albedo now defined in mixed_layer_init
 real, allocatable, dimension(:,:)   :: b_surf, b_surf_gp
 real, allocatable, dimension(:,:,:) :: b, tdt_rad, tdt_solar
@@ -138,6 +141,11 @@ type(interpolate_type),save         :: co2_interp           ! use external file 
 character(len=256)                  :: co2_file='co2'       !  file name of co2 file to read
 character(len=256)                  :: co2_variable_name='co2'       !  file name of co2 file to read
 
+!extras for reading in dust concentration
+logical                             :: do_read_cdod=.false.
+type(interpolate_type),save         :: cdod_interp
+character(len=256)                  :: cdod_file_name='cdod_clim'
+character(len=256)                  :: cdod_variable_name='cdod'
 
 namelist/two_stream_gray_rad_nml/ solar_constant, del_sol, &
            ir_tau_eq, ir_tau_pole, odp, atm_abs, sw_diff, &
@@ -145,8 +153,9 @@ namelist/two_stream_gray_rad_nml/ solar_constant, del_sol, &
            solar_exponent, do_seasonal, &
            ir_tau_co2_win, ir_tau_wv_win1, ir_tau_wv_win2, &
            ir_tau_co2, ir_tau_wv1, ir_tau_wv2, &
-		   window, carbon_conc, rad_scheme, &
+	   window, carbon_conc, rad_scheme, &
            do_read_co2, co2_file, co2_variable_name, solday, equinox_day, bog_a, bog_b, bog_mu, &
+           do_read_cdod, cdod_file_name, cdod_variable_name, &
            use_time_average_coszen, dt_rad_avg,&
            diabatic_acce !Schneider Liu values
 
@@ -156,7 +165,7 @@ namelist/two_stream_gray_rad_nml/ solar_constant, del_sol, &
 integer :: id_olr, id_swdn_sfc, id_swdn_toa, id_net_lw_surf, id_lwdn_sfc, id_lwup_sfc, &
            id_tdt_rad, id_tdt_solar, id_flux_rad, id_flux_lw, id_flux_sw, id_coszen, id_fracsun, &
            id_lw_dtrans, id_lw_dtrans_win, id_sw_dtrans, id_co2, id_mars_solar_long, id_rrsun, id_true_anom, &
-           id_time_since_ae, id_dec, id_ang
+           id_time_since_ae, id_dec, id_ang, id_cdod
 
 character(len=10), parameter :: mod_name = 'two_stream'
 
@@ -211,6 +220,9 @@ if(do_read_co2)then
    call interpolator_init (co2_interp, trim(co2_file)//'.nc', lonb, latb, data_out_of_bounds=(/ZERO/))
 endif
 
+if(do_read_cdod)then
+   call interpolator_init (cdod_interp, trim(cdod_file_name)//'.nc', lonb, latb, data_out_of_bounds=(/ZERO/))
+endif
 
 if(uppercase(trim(rad_scheme)) == 'GEEN') then
   lw_scheme = B_GEEN
@@ -225,6 +237,9 @@ else if(uppercase(trim(rad_scheme)) == 'BYRNE') then
 else if(uppercase(trim(rad_scheme)) == 'SCHNEIDER') then
   lw_scheme = B_SCHNEIDER_LIU
   call error_mesg('two_stream_gray_rad','Using Schneider & Liu (2009) radiation scheme for GIANT PLANETS.', NOTE)
+else if(uppercase(trim(rad_scheme)) == 'FRIERSON_DUST') then
+  lw_scheme = B_FRIERSON_DUST
+  call error_mesg('two_stream_gray_rad','Using Frierson-type Dusty radiation scheme.', & NOTE)
 else
   call error_mesg('two_stream_gray_rad','"'//trim(rad_scheme)//'"'//' is not a valid radiation scheme.', FATAL)
 endif
@@ -363,6 +378,11 @@ end select
                  'co2 concentration', &
                  'ppmv', missing_value=missing_value      )
 
+    id_cdod = &
+               register_diag_field (mod_name, 'cdod', Time, &
+                 'column dust optical depth', &
+                 'none', missing_value=missing_value      )
+
   if (lw_scheme.eq.B_GEEN) then
     id_lw_dtrans_win  = &
                register_diag_field ( mod_name, 'lw_dtrans_win', axes(1:3), Time, &
@@ -423,6 +443,7 @@ logical :: used
 
 
 real ,dimension(size(q,1),size(q,2),size(q,3)) :: co2f
+real, dimension(size(q,1),size(q,2))           :: tau_dust
 
 n = size(t,3)
 
@@ -520,6 +541,26 @@ case(B_FRIERSON, B_BYRNE)
      sw_down(:,:,k)   = insolation(:,:) * exp(-sw_tau(:,:,k))
   end do
 
+case(B_FRIERSON_DUST)
+  if (do_read_cdod)then
+    call interpolator( cdod_interp, Time_diag, tau_dust, trim(cdod_variable_name))
+  else
+    call error_mesg('two_stream_gray_rad','no input dust file specified',FATAL)
+  endif
+
+  sw_tau_0    = (1.0 - sw_diff*sin(lat)**2)*atm_abs
+
+  ! compute optical depths for each model level
+  do k = 1, n+1
+     sw_tau(:,:,k) = sw_tau_0 * (p_half(:,:,k)/pstd_mks)**solar_exponent &
+                        + W * (p_half(:,:,k)/pstd_mks) * tau_dust(:,:)
+  end do
+
+  ! compute downward shortwave flux
+  do k = 1, n+1
+     sw_down(:,:,k)    = insolation(:,:) * exp(-sw_tau(:,:,k))
+  end do
+
 case(B_SCHNEIDER_LIU)
   ! Schneider & Liu 2009 Giant planet scheme
   ! SW optical thickness
@@ -600,7 +641,7 @@ case(B_BYRNE)
      lw_down(:,:,k+1) = lw_down(:,:,k)*lw_dtrans(:,:,k) + b(:,:,k)*(1. - lw_dtrans(:,:,k))
   end do
 
-case(B_FRIERSON)
+case(B_FRIERSON, B_FRIERSON_DUST)
   ! longwave optical thickness function of latitude and pressure
   lw_tau_0 = ir_tau_eq + (ir_tau_pole - ir_tau_eq)*sin(lat)**2
   lw_tau_0 = lw_tau_0 * odp ! scale by optical depth parameter - default 1
@@ -680,6 +721,10 @@ if ( id_co2 > 0 ) then
    used = send_data ( id_co2, carbon_conc, Time_diag)
 endif
 
+if (id_cdod > 0 ) then
+   used = send_data ( id_cdod, tau_dust, Time_diag)
+endif
+
 return
 end subroutine two_stream_gray_rad_down
 
@@ -716,7 +761,7 @@ case(B_GEEN)
   end do
   lw_up = lw_up + lw_up_win
 
-case(B_FRIERSON, B_BYRNE)
+case(B_FRIERSON, B_BYRNE, B_FRIERSON_DUST)
   ! compute upward longwave flux by integrating upward
   lw_up(:,:,n+1)    = b_surf
   do k = n, 1, -1
@@ -830,6 +875,7 @@ if(lw_scheme.eq.B_SCHNEIDER_LIU) then
 endif
 
 if(do_read_co2)call interpolator_end(co2_interp)
+if(do_read_cdod)call interpolator_end(cdod_interp)
 
 end subroutine two_stream_gray_rad_end
 
