@@ -1117,7 +1117,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
        
        if(do_read_cdod)then
          call interpolator( cdod_interp, Time_diag, cdod_in, trim(cdod_field_name) ) 
-         dust_mmr_ref = 3.714e-6*cdod_in / (20. - 3.714e-6*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
+         dust_mmr_ref = 2.6e-4*cdod_in / (16.4 - 2.6e-4*cdod_in) ! Converts dust optical depth at 610Pa to dust mass mixing ratio at 610Pa.
        else
          dust_mmr_ref = dust_mix_ratio
        endif
@@ -1129,7 +1129,7 @@ subroutine run_socrates(Time, Time_diag, rad_lat, rad_lon, temp_in, q_in, t_surf
 		      -8*sin((mars_solar_long-158.)*pi/180.)*(sin_lat(:,:))**5
 	 do i=1, size(temp_in,1)
 	   do j=1, size(temp_in,2)
-	     dust_in(i, j, :) = dust_mmr_ref(i, j)*exp(nu_dust*(1-(700/p_full_in(i,j,:))**(70./zmax(i,j))))
+	     dust_in(i, j, :) = dust_mmr_ref(i, j)*exp(nu_dust*(1-MAX((700/p_full_in(i,j,:))**(70./zmax(i,j)),1.)))
 	   end do
 	 end do
        endif

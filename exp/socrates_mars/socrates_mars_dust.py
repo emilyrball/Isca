@@ -24,7 +24,7 @@ cb = SocratesCodeBase.from_directory(GFDL_BASE)
 
 cb.compile()  # compile the source code to working directory $GFDL_WORK/codebase
 
-inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/dust_scenario.nc')]
+inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/cdod_warm.nc'), os.path.join(base_dir,'input/cdod_clim.nc'), os.path.join(base_dir,'input/cdod_cold.nc')]
 
 
 # create a diagnostics output file for daily snapshots
@@ -67,7 +67,7 @@ diag.add_field('socrates', 'ang', time_avg=True)
 # define namelist values as python dictionary
 namelist = Namelist({
     'main_nml': {
-        'dt_atmos': 110,
+        'dt_atmos': 55,
         'days': 0.,
         'seconds': 30.*88440.,
         'calendar': 'no_calendar'
@@ -200,8 +200,8 @@ namelist = Namelist({
         'co2_ppmv': 0.949*1e6,
         'n2_mix_ratio': 0.026*(28.0134)/(1000.*8.314/192.0),
 	'do_read_cdod':True,
-	'cdod_file_name':'dust_scenario',
-	'cdod_field_name':'cdod'
+	'cdod_field_name':'cdod',
+	'account_for_effect_of_dust':True
     }, 
 
 #     configure the relaxation profile
@@ -256,10 +256,12 @@ if __name__=="__main__":
 
     scale = 1.
 
+    dust_clim = 'cdod_warm'
+
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_dust', codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim, codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag
@@ -272,6 +274,7 @@ if __name__=="__main__":
                 exp.namelist['idealized_moist_phys_nml']['convection_scheme'] = conv
                 exp.namelist['mixed_layer_nml']['depth'] = depth_val
                 exp.namelist['astronomy_nml']['per'] = per_value
+                exp.namelist['socrates_rad_nml']['cdod_file_name'] = dust_clim
 
 #            with exp_progress(exp, description='o%.0f d{day}' % scale):
                 exp.run(1, use_restart=False, num_cores=NCORES)
