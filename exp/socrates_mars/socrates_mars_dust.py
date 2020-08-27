@@ -24,7 +24,7 @@ cb = SocratesCodeBase.from_directory(GFDL_BASE)
 
 cb.compile()  # compile the source code to working directory $GFDL_WORK/codebase
 
-inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/cdod_warm.nc'), os.path.join(base_dir,'input/cdod_clim.nc'), os.path.join(base_dir,'input/cdod_cold.nc')]
+inputfiles = [os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust'), os.path.join(base_dir,'input/sp_lw_17_dsa_mars_dust_k'), os.path.join(base_dir,'input/sp_sw_42_dsa_mars_sun_dust_k'), os.path.join(base_dir,'input/t42_mola_mars.nc'), os.path.join(base_dir,'input/cdod_warm.nc'), os.path.join(base_dir,'input/cdod_clim.nc'), os.path.join(base_dir,'input/cdod_cold.nc'), os.path.join(base_dir,'input/cdod_warm_25.nc')]
 
 
 # create a diagnostics output file for daily snapshots
@@ -67,7 +67,7 @@ diag.add_field('socrates', 'ang', time_avg=True)
 # define namelist values as python dictionary
 namelist = Namelist({
     'main_nml': {
-        'dt_atmos': 55,
+        'dt_atmos': 22,
         'days': 0.,
         'seconds': 30.*88440.,
         'calendar': 'no_calendar'
@@ -187,7 +187,7 @@ namelist = Namelist({
         'lw_spectral_filename':'INPUT/sp_lw_17_dsa_mars_dust',
         'sw_spectral_filename':'INPUT/sp_sw_42_dsa_mars_sun_dust',
         'do_read_ozone': False,
-        'dt_rad':1320,
+        'dt_rad':660,
         'store_intermediate_rad':True,
         'chunk_size': 16,
         'use_pressure_interp_for_half_levels':False,
@@ -256,7 +256,7 @@ if __name__=="__main__":
 
     scale = 1.
 
-    dust_clim = 'cdod_warm'
+    dust_clim = 'cdod_warm_25'
 
     for conv in conv_schemes:
         for depth_val in depths:
