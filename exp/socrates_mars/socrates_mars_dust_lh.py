@@ -84,6 +84,7 @@ namelist = Namelist({
         'roughness_moist':0.,                
         'two_stream_gray': False,
         'do_lscale_cond': False,
+      'do_lscale_cond_lh':True,
         'do_socrates_radiation': True,
     },
 
@@ -259,7 +260,7 @@ if __name__=="__main__":
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_dust', codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_dust_lh', codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag
