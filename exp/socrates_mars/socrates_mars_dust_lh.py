@@ -257,10 +257,12 @@ if __name__=="__main__":
 
     scale = 1.
 
+    dust_clim = 'cdod_warm_25'
+
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_dust_lh', codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim+'_lh', codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag
