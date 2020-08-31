@@ -22,6 +22,8 @@ use         mixed_layer_mod, only: mixed_layer_init, mixed_layer, mixed_layer_en
 
 use         lscale_cond_mod, only: lscale_cond_init, lscale_cond, lscale_cond_end
 
+use      lscale_cond_lh_mod, only: lscale_cond_lh_init, lscale_cond_lh, lscale_cond_lh_end
+
 use qe_moist_convection_mod, only: qe_moist_convection_init, qe_moist_convection, qe_moist_convection_end
 
 use                 ras_mod, only: ras_init, ras_end, ras
@@ -108,7 +110,7 @@ logical :: do_bm = .false.
 logical :: do_ras = .false.
 
 logical :: do_lscale_cond = .true.
-
+logical :: do_lscale_cond_lh=.false.
 !s Radiation options
 logical :: two_stream_gray = .true.
 logical :: do_rrtm_radiation = .false.
@@ -152,7 +154,7 @@ namelist / idealized_moist_phys_nml / turb, lwet_convection, do_bm, do_ras, roug
                                       gp_surface, convection_scheme,          &
                                       bucket, init_bucket_depth, init_bucket_depth_land, & !RG Add bucket 
                                       max_bucket_depth_land, robert_bucket, raw_bucket,  &
-                                      do_lscale_cond, do_socrates_radiation
+                                      do_lscale_cond, do_socrates_radiation, do_lscale_cond_lh
 
 
 integer, parameter :: num_time_levels = 2 !RG Add bucket - number of time levels added to allow timestepping in this module
@@ -212,7 +214,9 @@ real, allocatable, dimension(:,:,:) ::                                        &
      conv_dt_tg,           &   ! temperature tendency from convection
      conv_dt_qg,           &   ! moisture tendency from convection
      cond_dt_tg,           &   ! temperature tendency from condensation
-     cond_dt_qg                ! moisture tendency from condensation
+     cond_dt_qg            &   ! moisture tendency from condensation
+     cond_lh_dt_tg,        &
+     cond_lh_dt_qg
 
 
 logical, allocatable, dimension(:,:) ::                                       &
@@ -254,6 +258,8 @@ integer ::           &
      id_conv_dt_qg,  &   ! temperature tendency from convection
      id_cond_dt_tg,  &   ! temperature tendency from condensation
      id_cond_dt_qg,  &   ! temperature tendency from condensation
+     id_cond_lh_dt_tg,     &
+     id_cond_lh_dt_qg,     &
      id_bucket_depth,      &   ! bucket depth variable for output  - RG Add bucket
      id_bucket_depth_conv, &   ! bucket depth variation induced by convection  - RG Add bucket
      id_bucket_depth_cond, &   ! bucket depth variation induced by condensation  - RG Add bucket
@@ -466,6 +472,8 @@ allocate(conv_dt_tg  (is:ie, js:je, num_levels))
 allocate(conv_dt_qg  (is:ie, js:je, num_levels))
 allocate(cond_dt_tg  (is:ie, js:je, num_levels))
 allocate(cond_dt_qg  (is:ie, js:je, num_levels))
+allocate(cond_lh_dt_tg  (is:ie, js:je, num_levels))
+allocate(cond_lh_dt_qg  (is:ie, js:je, num_levels))
 
 allocate(coldT        (is:ie, js:je)); coldT = .false.
 allocate(klzbs        (is:ie, js:je))
@@ -593,12 +601,17 @@ if(turb) then
 end if
 
 call lscale_cond_init()
+call lscale_cond_lh_init()
 
 axes = get_axis_id()
 
 id_cond_dt_qg = register_diag_field(mod_name, 'dt_qg_condensation',        &
      axes(1:3), Time, 'Moisture tendency from condensation','kg/kg/s')
 id_cond_dt_tg = register_diag_field(mod_name, 'dt_tg_condensation',        &
+     axes(1:3), Time, 'Temperature tendency from condensation','K/s')
+id_cond_lh_dt_qg = register_diag_field(mod_name, 'dt_qg_lh_condensation',        &
+     axes(1:3), Time, 'Moisture tendency from condensation','kg/kg/s')
+id_cond_lh_dt_tg = register_diag_field(mod_name, 'dt_tg_lh_condensation',        &
      axes(1:3), Time, 'Temperature tendency from condensation','K/s')
 id_cond_rain = register_diag_field(mod_name, 'condensation_rain',          &
      axes(1:2), Time, 'Rain from condensation','kg/m/m/s')
@@ -686,6 +699,9 @@ end select
 
 if (r_conv_scheme .eq. DRY_CONV .and. do_lscale_cond .eq. .true.) then
         call error_mesg('idealized_moist_phys','do_lscale_cond is .true. but r_conv_scheme is dry. These options may not be consistent.', WARNING)
+endif
+if (r_conv_scheme .eq. DRY_CONV .and. do_lscale_cond_lh .eq. .true.) then
+        call error_mesg('idealized_moist_phys','do_lscale_cond_lh is .true. but r_conv_scheme is dry. These options may not be consistent.', WARNING)
 endif
 
 if(two_stream_gray) call two_stream_gray_rad_init(is, ie, js, je, num_levels, get_axis_id(), Time, rad_lonb_2d, rad_latb_2d, dt_real)
@@ -913,6 +929,33 @@ if ( do_lscale_cond .eq. .true.) then
 
 endif
 
+! Perform large scale convection with latent heating
+if ( do_lscale_cond_lh .eq. .true.) then
+  ! Large scale convection is a function of humidity only.  This is
+  ! inconsistent with the dry convection scheme, don't run it!
+  rain = 0.0; snow = 0.0
+  call lscale_cond_lh (      tg_tmp,          qg_tmp,          dt_tg,        &
+             p_full(:,:,:,previous),          p_half(:,:,:,previous),        &
+                              coldT,                            rain,        &
+                               snow,                   cond_lh_dt_tg,        &
+                     cond_lh_dt_qg )
+
+  cond_lh_dt_tg = cond_lh_dt_tg/delta_t
+  cond_lh_dt_qg = cond_lh_dt_qg/delta_t
+  depth_change_cond = rain/dens_h2o     ! RG Add bucket
+  rain       = rain/delta_t
+  snow       = snow/delta_t
+  precip     = precip + rain + snow
+
+  dt_tg = dt_tg + cond_dt_tg
+  dt_tracers(:,:,:,nsphum) = dt_tracers(:,:,:,nsphum) + cond_lh_dt_qg
+
+  if(id_cond_lh_dt_qg > 0) used = send_data(id_cond_lh_dt_qg, cond_lh_dt_qg, Time)
+  if(id_cond_lh_dt_tg > 0) used = send_data(id_cond_lh_dt_tg, cond_lh_dt_tg, Time)
+  if(id_cond_rain  > 0) used = send_data(id_cond_rain, rain, Time)
+  if(id_precip     > 0) used = send_data(id_precip, precip, Time)
+
+endif
 
 ! Begin the radiation calculation by computing downward fluxes.
 ! This part of the calculation does not depend on the surface temperature.

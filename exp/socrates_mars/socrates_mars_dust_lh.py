@@ -67,7 +67,7 @@ diag.add_field('socrates', 'ang', time_avg=True)
 # define namelist values as python dictionary
 namelist = Namelist({
     'main_nml': {
-        'dt_atmos': 22,
+        'dt_atmos': 55,
         'days': 0.,
         'seconds': 30.*88440.,
         'calendar': 'no_calendar'
@@ -84,6 +84,7 @@ namelist = Namelist({
         'roughness_moist':0.,                
         'two_stream_gray': False,
         'do_lscale_cond': False,
+      'do_lscale_cond_lh':True,
         'do_socrates_radiation': True,
     },
 
@@ -261,7 +262,7 @@ if __name__=="__main__":
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim, codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim+'_lh', codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag
