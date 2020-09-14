@@ -50,6 +50,8 @@ diag.add_field('dynamics', 'sphum', time_avg=True)
 diag.add_field('atmosphere', 'precipitation', time_avg=True)
 
 diag.add_field('atmosphere', 'dt_tg_convection', time_avg=True)
+diag.add_field('atmosphere', 'lh_rel', time_avg=True)
+diag.add_field('atmosphere', 'dt_tg_lh_condensation', time_avg=True)
 
 diag.add_field('mixed_layer', 't_surf', time_avg=True)
 diag.add_field('mixed_layer', 'flux_lhe', time_avg=True)
@@ -67,7 +69,7 @@ diag.add_field('socrates', 'ang', time_avg=True)
 # define namelist values as python dictionary
 namelist = Namelist({
     'main_nml': {
-        'dt_atmos': 55,
+        'dt_atmos': 110,
         'days': 0.,
         'seconds': 30.*88440.,
         'calendar': 'no_calendar'
@@ -84,7 +86,7 @@ namelist = Namelist({
         'roughness_moist':0.,                
         'two_stream_gray': False,
         'do_lscale_cond': False,
-      'do_lscale_cond_lh':True,
+        'do_lscale_cond_lh':True,
         'do_socrates_radiation': True,
     },
 
@@ -188,7 +190,7 @@ namelist = Namelist({
         'lw_spectral_filename':'INPUT/sp_lw_17_dsa_mars_dust',
         'sw_spectral_filename':'INPUT/sp_sw_42_dsa_mars_sun_dust',
         'do_read_ozone': False,
-        'dt_rad':660,
+        'dt_rad':1320,
         'store_intermediate_rad':True,
         'chunk_size': 16,
         'use_pressure_interp_for_half_levels':False,
@@ -241,8 +243,8 @@ namelist = Namelist({
     },
 
     'spectral_init_cond_nml': {
-        'topog_file_name': 't42_mola_mars.nc',
-        'topography_option': 'input',
+#        'topog_file_name': 't42_mola_mars.nc',
+#        'topography_option': 'input',
     },
 
 })
@@ -257,12 +259,12 @@ if __name__=="__main__":
 
     scale = 1.
 
-    dust_clim = 'cdod_warm_25'
+    dust_clim = 'cdod_cold'
 
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim+'_lh', codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_'+dust_clim+'_lh_rel', codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag

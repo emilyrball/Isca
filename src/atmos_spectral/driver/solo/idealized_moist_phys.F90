@@ -214,9 +214,10 @@ real, allocatable, dimension(:,:,:) ::                                        &
      conv_dt_tg,           &   ! temperature tendency from convection
      conv_dt_qg,           &   ! moisture tendency from convection
      cond_dt_tg,           &   ! temperature tendency from condensation
-     cond_dt_qg            &   ! moisture tendency from condensation
+     cond_dt_qg,           &   ! moisture tendency from condensation
      cond_lh_dt_tg,        &
-     cond_lh_dt_qg
+     cond_lh_dt_qg,        &
+     lh_rel
 
 
 logical, allocatable, dimension(:,:) ::                                       &
@@ -260,6 +261,7 @@ integer ::           &
      id_cond_dt_qg,  &   ! temperature tendency from condensation
      id_cond_lh_dt_tg,     &
      id_cond_lh_dt_qg,     &
+     id_lh_rel,            &
      id_bucket_depth,      &   ! bucket depth variable for output  - RG Add bucket
      id_bucket_depth_conv, &   ! bucket depth variation induced by convection  - RG Add bucket
      id_bucket_depth_cond, &   ! bucket depth variation induced by condensation  - RG Add bucket
@@ -474,6 +476,7 @@ allocate(cond_dt_tg  (is:ie, js:je, num_levels))
 allocate(cond_dt_qg  (is:ie, js:je, num_levels))
 allocate(cond_lh_dt_tg  (is:ie, js:je, num_levels))
 allocate(cond_lh_dt_qg  (is:ie, js:je, num_levels))
+allocate(lh_rel         (is:ie, js:je, num_levels))
 
 allocate(coldT        (is:ie, js:je)); coldT = .false.
 allocate(klzbs        (is:ie, js:je))
@@ -613,6 +616,8 @@ id_cond_lh_dt_qg = register_diag_field(mod_name, 'dt_qg_lh_condensation',       
      axes(1:3), Time, 'Moisture tendency from condensation','kg/kg/s')
 id_cond_lh_dt_tg = register_diag_field(mod_name, 'dt_tg_lh_condensation',        &
      axes(1:3), Time, 'Temperature tendency from condensation','K/s')
+id_lh_rel = register_diag_field(mod_name, 'lh_rel',                        &
+     axes(1:3), Time, 'Latent heat released from condensation', 'K')
 id_cond_rain = register_diag_field(mod_name, 'condensation_rain',          &
      axes(1:2), Time, 'Rain from condensation','kg/m/m/s')
 id_precip = register_diag_field(mod_name, 'precipitation',          &
@@ -900,6 +905,38 @@ end select
 dt_tg = dt_tg + conv_dt_tg
 dt_tracers(:,:,:,nsphum) = dt_tracers(:,:,:,nsphum) + conv_dt_qg
 
+! Perform large scale convection with latent heating
+if ( do_lscale_cond_lh .eq. .true.) then
+  ! Need to think about how this will work with lscale_cond turned on. Current
+  ! calculates a temperature floor below which CO2 condenses.
+
+  ! Large scale convection is a function of humidity only.  This is
+  ! inconsistent with the dry convection scheme, don't run it!
+  rain = 0.0; snow = 0.0; lh_rel = 0.0
+  call lscale_cond_lh (      tg_tmp,                          qg_tmp,        &
+             p_full(:,:,:,previous),          p_half(:,:,:,previous),        &
+                              lh_rel,        coldT,             rain,        &
+                               snow,                   cond_lh_dt_tg,        &
+                     cond_lh_dt_qg                            )
+
+  !cond_lh_dt_tg = cond_lh_dt_tg/delta_t
+  cond_lh_dt_qg = cond_lh_dt_qg/delta_t
+  depth_change_cond = rain/dens_h2o     ! RG Add bucket
+  rain       = rain/delta_t
+  snow       = snow/delta_t
+  precip     = precip + rain + snow
+
+  dt_tg = dt_tg + cond_lh_dt_tg
+  dt_tracers(:,:,:,nsphum) = dt_tracers(:,:,:,nsphum) + cond_lh_dt_qg
+
+  if(id_cond_lh_dt_qg > 0) used = send_data(id_cond_lh_dt_qg, cond_lh_dt_qg, Time)
+  if(id_cond_lh_dt_tg > 0) used = send_data(id_cond_lh_dt_tg, cond_lh_dt_tg, Time)
+  if(id_cond_rain  > 0) used = send_data(id_cond_rain, rain, Time)
+  if(id_precip     > 0) used = send_data(id_precip, precip, Time)
+  if(id_lh_rel     > 0) used = send_data(id_lh_rel, lh_rel, Time)
+
+endif
+
 
 ! Perform large scale convection
 if ( do_lscale_cond .eq. .true.) then
@@ -924,34 +961,6 @@ if ( do_lscale_cond .eq. .true.) then
 
   if(id_cond_dt_qg > 0) used = send_data(id_cond_dt_qg, cond_dt_qg, Time)
   if(id_cond_dt_tg > 0) used = send_data(id_cond_dt_tg, cond_dt_tg, Time)
-  if(id_cond_rain  > 0) used = send_data(id_cond_rain, rain, Time)
-  if(id_precip     > 0) used = send_data(id_precip, precip, Time)
-
-endif
-
-! Perform large scale convection with latent heating
-if ( do_lscale_cond_lh .eq. .true.) then
-  ! Large scale convection is a function of humidity only.  This is
-  ! inconsistent with the dry convection scheme, don't run it!
-  rain = 0.0; snow = 0.0
-  call lscale_cond_lh (      tg_tmp,          qg_tmp,          dt_tg,        &
-             p_full(:,:,:,previous),          p_half(:,:,:,previous),        &
-                              coldT,                            rain,        &
-                               snow,                   cond_lh_dt_tg,        &
-                     cond_lh_dt_qg )
-
-  cond_lh_dt_tg = cond_lh_dt_tg/delta_t
-  cond_lh_dt_qg = cond_lh_dt_qg/delta_t
-  depth_change_cond = rain/dens_h2o     ! RG Add bucket
-  rain       = rain/delta_t
-  snow       = snow/delta_t
-  precip     = precip + rain + snow
-
-  dt_tg = dt_tg + cond_dt_tg
-  dt_tracers(:,:,:,nsphum) = dt_tracers(:,:,:,nsphum) + cond_lh_dt_qg
-
-  if(id_cond_lh_dt_qg > 0) used = send_data(id_cond_lh_dt_qg, cond_lh_dt_qg, Time)
-  if(id_cond_lh_dt_tg > 0) used = send_data(id_cond_lh_dt_tg, cond_lh_dt_tg, Time)
   if(id_cond_rain  > 0) used = send_data(id_cond_rain, rain, Time)
   if(id_precip     > 0) used = send_data(id_precip, precip, Time)
 
