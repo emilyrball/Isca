@@ -112,7 +112,7 @@ contains
 !--------------------- interface arguments -----------------------------
 
    real   , intent(in) , dimension(:,:,:) :: qin, pfull, phalf
-   real   , intent(inout), dimension(:,:,:) :: tin
+   real   , intent(in), dimension(:,:,:) :: tin
    logical   , intent(in) , dimension(:,:):: coldT
    real   , intent(out), dimension(:,:)   :: rain,snow
    real   , intent(out), dimension(:,:,:) :: tdel, qdel, lh_rel
@@ -150,9 +150,6 @@ integer  k, kx, j, jx, i, ix
             tdel(i,j,k)=0.0
             lh_rel(i,j,k)=0.0
          endif
-         print*, 153
-         tin(i,j,k) = max(tin(i,j,k),tcond(i,j,k))
-         print*, 155
          enddo
       enddo
    enddo
