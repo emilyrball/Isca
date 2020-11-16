@@ -247,6 +247,8 @@ namelist = Namelist({
         'topography_option': 'input',
     },
 
+    'lscale_cond_lh_nml': {
+    },
 })
 
 if __name__=="__main__":
@@ -259,12 +261,14 @@ if __name__=="__main__":
 
     scale = 1.
 
-    dust_clim = 'cdod_all_years'
+    dust_clim = 'cdod_clim'
+
+    lh_bound = 159.2
 
     for conv in conv_schemes:
         for depth_val in depths:
             for per_value in pers:
-                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_all_years', codebase=cb)
+                exp = Experiment('soc_mars_mk36_per_value'+str((per_value))+'_'+conv+'_mld_'+str(depth_val)+'_with_mola_topo_'+dust_clim+'_lh_rel_'+str(lh_bound), codebase=cb)
                 exp.clear_rundir()
 
                 exp.diag_table = diag
@@ -275,6 +279,7 @@ if __name__=="__main__":
                 exp.namelist['constants_nml']['pstd_mks'] = scale * 610.0
                 exp.namelist['spectral_dynamics_nml']['reference_sea_level_press'] = scale * 610.0
                 exp.namelist['idealized_moist_phys_nml']['convection_scheme'] = conv
+                exp.namelist['lscale_cond_lh_nml']['lh_bound'] = lh_bound
                 exp.namelist['mixed_layer_nml']['depth'] = depth_val
                 exp.namelist['astronomy_nml']['per'] = per_value
                 exp.namelist['socrates_rad_nml']['cdod_file_name'] = dust_clim

@@ -57,12 +57,13 @@ real    :: hc=1.00
 logical :: do_evap=.false.
 logical :: do_simple =.false.
 
+real    :: lh_bound = 149.2
 real    :: L_c0 = 5.902e05
 real    :: c_pg = 770.2
 real    :: c_pc = 1070.7
 real    :: c_p  = 735.9
 
-namelist /lscale_cond_lh_nml/  hc, do_evap, do_simple
+namelist /lscale_cond_lh_nml/  hc, do_evap, do_simple, lh_bound
 
 
 !-----------------------------------------------------------------------
@@ -137,7 +138,7 @@ integer  k, kx, j, jx, i, ix
       jx=size(tin,2)
       ix=size(tin,1)
 
-      tcond(:,:,:) = 149.2+6.48*LOG(0.00135*pfull(:,:,:))         ! CO2 condensation temperature, Way 2017
+      tcond(:,:,:) = lh_bound+6.48*LOG(0.00135*pfull(:,:,:))         ! CO2 condensation temperature, Way 2017
 
    do i=1,ix
       do j=1,jx
